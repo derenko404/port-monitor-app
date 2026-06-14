@@ -1,9 +1,10 @@
 import { api } from '@renderer/features/shared/lib/api'
 import { Button } from '@ui/button'
 import { RefreshCw, Settings as SettingsIcon } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
+import { debounce } from '@renderer/features/shared/lib/utils'
 import { killCommand, localhostUrl } from 'src/shared/ports'
 import { PortEntry, PortGroup } from 'src/shared/types'
 import { AppHeader } from '../shared/components/AppHeader'
@@ -53,9 +54,13 @@ function Ports(): React.JSX.Element {
 
   const portCount = data.reduce((n, g) => n + g.ports.length, 0)
 
-  // track a search once per session (when the box goes from empty to non-empty)
+  // track the full query 500ms after the user stops typing
+  const trackSearch = useMemo(
+    () => debounce((query: string) => api.track('search', { query }), 500),
+    []
+  )
   const onSearch = (value: string): void => {
-    if (!q && value) api.track('search')
+    if (value) trackSearch(value)
     setQ(value)
   }
 
@@ -131,6 +136,7 @@ function Ports(): React.JSX.Element {
                       port={p}
                       pinned={!!p.pinned}
                       showPort={g.ports.length > 1}
+                      label={p.command !== g.command ? p.command : undefined}
                       onInfo={setInfoPort}
                       onOpenExternal={(x) => {
                         api.track('open_browser', { source: 'app' })

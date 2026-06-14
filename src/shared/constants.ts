@@ -1,5 +1,8 @@
 import { Settings } from './types'
 
+export const REPO_URL = 'https://github.com/derenko404/port-monitor-app'
+export const ISSUES_URL = `${REPO_URL}/issues`
+
 export const POLL_MIN = 5
 export const POLL_MAX = 300
 export const PORT_MIN = 1
@@ -15,5 +18,6 @@ export const DEFAULT_SETTINGS: Settings = {
   portMax: PORT_MAX,
   killSignal: 'SIGTERM',
   analytics: true,
-  grouping: false
+  grouping: false,
+  resolveContainersNames: true
 }

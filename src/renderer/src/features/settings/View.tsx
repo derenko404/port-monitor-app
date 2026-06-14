@@ -2,10 +2,11 @@ import { Button } from '@ui/button'
 import { Label } from '@ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@ui/select'
 import { Switch } from '@ui/switch'
-import { Home } from 'lucide-react'
+import { Home, MessageSquare } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
+import { ISSUES_URL } from 'src/shared/constants'
 import { KillSignal, Theme } from 'src/shared/types'
 import { api } from '../shared/lib/api'
 import { AppHeader } from '../shared/components/AppHeader'
@@ -127,6 +128,17 @@ function Settings(): React.JSX.Element {
               onCheckedChange={(v) => updateSettings({ grouping: v })}
             />
           </SettingRow>
+          <SettingRow
+            label={t('settings.resolveContainersNames.label')}
+            desc={t('settings.resolveContainersNames.desc')}
+            htmlFor="resolveContainersNames"
+          >
+            <Switch
+              id="resolveContainersNames"
+              checked={settings.resolveContainersNames}
+              onCheckedChange={(v) => updateSettings({ resolveContainersNames: v })}
+            />
+          </SettingRow>
           <SettingRow label={t('settings.killSignal.label')} desc={t('settings.killSignal.desc')}>
             <Select
               value={settings.killSignal}
@@ -172,6 +184,15 @@ function Settings(): React.JSX.Element {
               checked={settings.analytics}
               onCheckedChange={(v) => updateSettings({ analytics: v })}
             />
+          </SettingRow>
+        </Section>
+
+        <Section title={t('settings.sections.feedback')}>
+          <SettingRow label={t('settings.feedback.label')} desc={t('settings.feedback.desc')}>
+            <Button variant="outline" size="sm" onClick={() => api.openExternal(ISSUES_URL)}>
+              <MessageSquare className="size-4" />
+              {t('settings.feedback.action')}
+            </Button>
           </SettingRow>
         </Section>
       </div>

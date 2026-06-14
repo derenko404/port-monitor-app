@@ -9,6 +9,17 @@ export function sleep(duration: number): Promise<void> {
   return new Promise((r) => setTimeout(r, duration))
 }
 
+export function debounce<Args extends unknown[]>(
+  fn: (...args: Args) => void,
+  wait: number
+): (...args: Args) => void {
+  let timer: ReturnType<typeof setTimeout> | undefined
+  return (...args: Args): void => {
+    clearTimeout(timer)
+    timer = setTimeout(() => fn(...args), wait)
+  }
+}
+
 export function fmtInterval(s: number): string {
   if (s < 60) return `${s}s`
   const m = Math.floor(s / 60)

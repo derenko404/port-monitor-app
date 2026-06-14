@@ -116,7 +116,7 @@ export function PortsTable<TData, TValue>({
   }, [rows, selectedKey, select, onInfo, onKill, rowKey])
 
   return (
-    <Table>
+    <Table className="table-fixed">
       <TableHeader>
         {table.getHeaderGroups().map((hg) => (
           <TableRow key={hg.id} className="border-0 hover:bg-transparent">

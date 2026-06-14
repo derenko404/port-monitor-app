@@ -16,7 +16,7 @@ import appIcon from '../../build/icon-dock.png?asset'
 import trayIcon from '../../resources/trayTemplate_black.png?asset'
 import { AnalyticsEvent, AnalyticsProps } from '../shared/analytics'
 import { IPC } from '../shared/ipc'
-import { groupPorts, groupRank, localhostUrl } from '../shared/ports'
+import { groupRank, localhostUrl, toRows } from '../shared/ports'
 import { isKnownTech } from '../shared/tech'
 import { PortEntry, PortGroup, Settings } from '../shared/types'
 import { capture, isFreshInstall, shutdownAnalytics } from './analytics'
@@ -43,8 +43,8 @@ let isQuitting = false
 function createWindow(): BrowserWindow {
   const win = new BrowserWindow({
     width: 460,
-    height: 600,
-    minWidth: 380,
+    height: 500,
+    minWidth: 460,
     minHeight: 420,
     show: false,
     movable: true,
@@ -97,28 +97,39 @@ function notifyPortsChanged(): void {
 // build the tray menu from the live port list (filtered/sorted like the UI)
 async function buildTrayMenu(): Promise<Menu> {
   const settings = getSettings()
-  let ports: PortEntry[] = []
+  let groups: PortGroup[] = []
   try {
-    ports = (await listListeningPorts()).ports
+    const result = await listListeningPorts(settings.resolveContainersNames)
+    groups = result.groups
   } catch {
     // ignore — show an empty list rather than failing the menu
   }
 
   const MAX = 15
   const isPinned = (p: PortEntry): boolean => settings.pinned.includes(p.port)
-  const groupPinned = (g: PortGroup): boolean => g.ports.some(isPinned)
 
   const inRange = (p: PortEntry): boolean =>
     isPinned(p) || (p.port >= settings.portMin && p.port <= settings.portMax)
 
+  // keep each group's in-range ports; drop empty groups (mirrors the UI)
+  const visible = groups
+    .map((g) => {
+      const kept = g.ports.filter(inRange)
+      return kept.length ? { ...g, ports: kept } : null
+    })
+    .filter((g): g is PortGroup => g !== null)
+
   // same rank order as the UI, then uptime (newest first)
-  const visible = ports.filter(inRange)
-  const groups = groupPorts(visible, settings.grouping).sort(
+  const rows = toRows(visible, settings.grouping).sort(
     (a, b) => groupRank(b, settings) - groupRank(a, settings) || (b.started ?? 0) - (a.started ?? 0)
   )
 
-  const openItem = (p: PortEntry): Electron.MenuItemConstructorOptions => ({
-    label: i18n.t('tray.openPort', { port: p.port }),
+  // `name` labels the port with its service (e.g. a docker container) when it
+  // differs from the row's command; omitted otherwise.
+  const openItem = (p: PortEntry, name?: string): Electron.MenuItemConstructorOptions => ({
+    label: name
+      ? i18n.t('tray.openNamedPort', { name, port: p.port })
+      : i18n.t('tray.openPort', { port: p.port }),
     click: () => {
       capture('open_browser', { source: 'tray' })
       shell.openExternal(localhostUrl(p.port))
@@ -134,19 +145,21 @@ async function buildTrayMenu(): Promise<Menu> {
     }
   })
 
-  const groupItem = (g: PortGroup): Electron.MenuItemConstructorOptions => {
-    const single = g.ports.length === 1
-    const pin = groupPinned(g) ? '📌 ' : ''
+  const rowItem = (g: PortGroup): Electron.MenuItemConstructorOptions => {
+    const { ports } = g
+    const single = ports.length === 1
+    const pin = ports.some(isPinned) ? '📌 ' : ''
     const known = isKnownTech(g.command)
     // known → one open action per port; unknown multi-port → list ports (disabled);
     // unknown single-port → nothing (the port already shows in the label)
+    const named = settings.resolveContainersNames
     const portRows: Electron.MenuItemConstructorOptions[] = known
-      ? g.ports.map(openItem)
+      ? ports.map((p) => openItem(p, named && p.command !== g.command ? p.command : undefined))
       : single
         ? []
-        : g.ports.map((p) => ({ label: `:${p.port}`, enabled: false }))
+        : ports.map((p) => ({ label: `:${p.port}`, enabled: false }))
     return {
-      label: single ? `${pin}:${g.ports[0].port}  —  ${g.command}` : `${pin}${g.command}`,
+      label: single ? `${pin}:${ports[0].port}  —  ${g.command}` : `${pin}${g.command}`,
       submenu: [
         { label: i18n.t('tray.pid', { pid: g.pid }), enabled: false },
         { type: 'separator' },
@@ -156,11 +169,11 @@ async function buildTrayMenu(): Promise<Menu> {
     }
   }
 
-  const shown = groups.slice(0, MAX)
-  const overflow = groups.length - shown.length
+  const shown = rows.slice(0, MAX)
+  const overflow = rows.length - shown.length
 
-  const portItems: Electron.MenuItemConstructorOptions[] = groups.length
-    ? shown.map(groupItem)
+  const portItems: Electron.MenuItemConstructorOptions[] = rows.length
+    ? shown.map(rowItem)
     : [{ label: i18n.t('tray.noPorts'), enabled: false }]
 
   if (overflow > 0) {
@@ -195,7 +208,7 @@ function trackLaunch(): void {
 }
 
 app.whenReady().then(() => {
-  ipcMain.handle(IPC.ports.list, () => listListeningPorts())
+  ipcMain.handle(IPC.ports.list, () => listListeningPorts(getSettings().resolveContainersNames))
 
   ipcMain.handle(IPC.ports.kill, (_e, pid: number, signal?: NodeJS.Signals) => killPid(pid, signal))
   ipcMain.handle(IPC.ports.alive, (_e, pid: number) => isPidAlive(pid))

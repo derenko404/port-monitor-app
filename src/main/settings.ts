@@ -40,6 +40,7 @@ function sanitize(s: Settings): Settings {
     killSignal: s.killSignal === 'SIGKILL' ? 'SIGKILL' : 'SIGTERM',
     analytics: s.analytics !== false, // default on
     grouping: s.grouping === true, // default off
+    resolveContainersNames: s.resolveContainersNames !== false, // default on
     pinned: s.pinned.filter((port) => Number.isInteger(port)),
     ...sanitizeRange(s)
   }

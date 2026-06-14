@@ -63,7 +63,8 @@
     "sections": {
       "monitoring": "Monitoring",
       "appearance": "Appearance",
-      "system": "System"
+      "system": "System",
+      "feedback": "Feedback"
     },
     "autoRefresh": {
       "label": "Auto-refresh",
@@ -88,6 +89,10 @@
       "label": "Group by process",
       "desc": "Combine ports from the same process into one row."
     },
+    "resolveContainersNames": {
+      "label": "Resolve containers names",
+      "desc": "Name containers behind VM's (eg. Docker and others)."
+    },
     "killSignal": {
       "label": "Kill signal",
       "desc": "Default signal the Kill button sends."
@@ -106,7 +111,12 @@
       "label": "Share analytics",
       "desc": "Send anonymous crash & error reports to help improve the app."
     },
-    "version": "v{{version}}"
+    "feedback": {
+      "label": "Leave feedback",
+      "desc": "Open an issue on GitHub to share ideas or report problems.",
+      "action": "Open issue"
+    },
+    "version": "Port Monitor v{{version}}"
   },
   "tray": {
     "open": "Open Port Monitor",
@@ -119,6 +129,7 @@
     "pid": "PID {{pid}}",
     "openBrowser": "🌐 Open in browser",
     "openPort": "🌐 Open :{{port}}",
+    "openNamedPort": "🌐 Open {{name}} :{{port}}",
     "kill": "🛑 Kill"
   }
 }

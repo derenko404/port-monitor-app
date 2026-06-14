@@ -1,10 +1,10 @@
+import { isKnownTech } from '@renderer/features/shared/lib/tech'
+import { fmtTimeAgo } from '@renderer/features/shared/lib/utils'
 import { ColumnDef } from '@tanstack/react-table'
 import { Pin } from 'lucide-react'
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { PortGroup } from 'src/shared/types'
-import { isKnownTech } from '@renderer/features/shared/lib/tech'
-import { fmtTimeAgo } from '@renderer/features/shared/lib/utils'
 import AppIcon from './components/AppIcon'
 import { PortPill } from './components/PortPill'
 
@@ -17,6 +17,7 @@ export function useColumns(): ColumnDef<PortGroup>[] {
         id: 'port',
         accessorFn: (g) => g.ports[0].port, // lowest port drives sort
         header: t('ports.columns.port'),
+        meta: { className: 'w-28' },
         cell: ({ row }) => {
           const { ports } = row.original
           const known = isKnownTech(row.original.command)
@@ -44,8 +45,6 @@ export function useColumns(): ColumnDef<PortGroup>[] {
       {
         accessorKey: 'command',
         header: t('ports.columns.app'),
-        // absorb slack so the name shows in full when there's room, truncates when not
-        meta: { className: 'w-full' },
         cell: ({ row }) => {
           const name = row.original.command
           return (
@@ -61,6 +60,7 @@ export function useColumns(): ColumnDef<PortGroup>[] {
       {
         accessorKey: 'pid',
         header: t('ports.columns.pid'),
+        meta: { className: 'w-16' },
         cell: ({ row }) => (
           <span className="text-muted-foreground text-[12px]">{row.original.pid}</span>
         )
@@ -69,6 +69,7 @@ export function useColumns(): ColumnDef<PortGroup>[] {
         accessorKey: 'started',
         header: t('ports.columns.uptime'),
         sortUndefined: 'last',
+        meta: { className: 'w-24' },
         cell: ({ row }) => (
           <span className="text-muted-foreground whitespace-nowrap text-[12px]">
             {fmtTimeAgo(row.original.started)}

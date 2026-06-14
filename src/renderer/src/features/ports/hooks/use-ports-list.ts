@@ -2,8 +2,8 @@ import { api } from '@renderer/features/shared/lib/api'
 import { portsAtom, portsErrorAtom, portsLoadedAtom, portsLoadingAtom } from '@renderer/store/ports'
 import { useAtomValue } from 'jotai'
 import { useEffect } from 'react'
-import { groupPorts, groupRank } from 'src/shared/ports'
-import { PortGroup, PortsError } from 'src/shared/types'
+import { groupRank, toRows } from 'src/shared/ports'
+import { PortEntry, PortGroup, PortsError } from 'src/shared/types'
 import { useSettings } from '../../shared/hooks/use-settings'
 import { useRefreshPorts } from './use-refresh-ports'
 
@@ -25,16 +25,18 @@ export function usePortsList(): UsePortsList {
   const spinning = useAtomValue(portsLoadingAtom)
   const refresh = useRefreshPorts()
 
-  // apply port-range filter (pinned ports bypass it), tag pin state
-  const visible = ports
-    .filter(
-      (p) =>
-        settings.pinned.includes(p.port) ||
-        (p.port >= settings.portMin && p.port <= settings.portMax)
-    )
-    .map((p) => ({ ...p, pinned: settings.pinned.includes(p.port) }))
+  const inRange = (p: PortEntry): boolean =>
+    settings.pinned.includes(p.port) || (p.port >= settings.portMin && p.port <= settings.portMax)
+  const tag = (p: PortEntry): PortEntry => ({ ...p, pinned: settings.pinned.includes(p.port) })
 
-  const data = groupPorts(visible, settings.grouping)
+  const visible = ports
+    .map((g) => {
+      const kept = g.ports.filter(inRange).map(tag)
+      return kept.length ? { ...g, ports: kept } : null
+    })
+    .filter((g): g is PortGroup => g !== null)
+
+  const data = toRows(visible, settings.grouping)
 
   // initial data fetch on mount
   useEffect(() => {

@@ -1,6 +1,8 @@
 import { execFile } from 'node:child_process'
 import { promisify } from 'node:util'
-import { ListPortsResult, PortEntry, PortsError } from '../shared/types'
+import { groupByPid } from '../shared/ports'
+import { ListPortsResult, PortEntry, PortGroup, PortsError } from '../shared/types'
+import { containerNamesResolverFor } from './container-names-resolver'
 
 const execFileAsync = promisify(execFile)
 
@@ -8,7 +10,7 @@ type ExecError = NodeJS.ErrnoException & { stdout?: string; stderr?: string }
 
 const PERMISSION_RE = /permission denied|operation not permitted|not permitted|EPERM|EACCES/i
 
-export async function listListeningPorts(): Promise<ListPortsResult> {
+export async function listListeningPorts(resolveContainersNames = true): Promise<ListPortsResult> {
   // -F machine format: one field per line, prefixed by type char.
   // c=command, p=pid, n=name. p/c apply to all following n lines.
   let stdout = ''
@@ -21,7 +23,7 @@ export async function listListeningPorts(): Promise<ListPortsResult> {
     if (!stdout.trim()) {
       const blob = `${e.stderr ?? ''} ${e.message ?? ''}`
       const error: PortsError = PERMISSION_RE.test(blob) ? 'permission' : 'unknown'
-      return { ports: [], error }
+      return { groups: [], error }
     }
   }
 
@@ -64,7 +66,23 @@ export async function listListeningPorts(): Promise<ListPortsResult> {
   })
 
   await attachStartTimes(deduped)
-  return { ports: deduped, error: null }
+  const groups = groupByPid(deduped)
+  if (resolveContainersNames) await resolveContainerNames(groups)
+  return { groups, error: null }
+}
+
+// For proxy groups (e.g. docker) rename each port to the service behind it. The
+// group command stays as the proxy; downstream reads each port like any process.
+async function resolveContainerNames(groups: PortGroup[]): Promise<void> {
+  for (const g of groups) {
+    const resolver = containerNamesResolverFor(g.command)
+    if (!resolver) continue
+    const names = await resolver.resolve(g.ports.map((p) => p.port))
+    for (const port of g.ports) {
+      const name = names.get(port.port)
+      if (name) port.command = name
+    }
+  }
 }
 
 // Enrich entries with process start time via `ps`. lsof can't give this.

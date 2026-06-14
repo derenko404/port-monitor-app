@@ -16,7 +16,7 @@ export function useRefreshPorts(): () => Promise<void> {
   return useCallback(async () => {
     setLoading(true)
     const [res] = await Promise.all([api.listPorts(), sleep(250)])
-    setPorts(res.ports)
+    setPorts(res.groups)
     setError(res.error)
     setLoaded(true)
     setLoading(false)

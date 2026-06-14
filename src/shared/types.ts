@@ -8,7 +8,6 @@ export interface PortEntry {
   pinned?: boolean // set in renderer from persisted pins
 }
 
-// one process (pid) and every port it listens on; ports sorted ascending, >=1
 export interface PortGroup {
   pid: number
   command: string
@@ -23,7 +22,7 @@ export type KillSignal = 'SIGTERM' | 'SIGKILL'
 export type PortsError = 'permission' | 'unknown'
 
 export interface ListPortsResult {
-  ports: PortEntry[]
+  groups: PortGroup[]
   error: PortsError | null
 }
 
@@ -38,4 +37,5 @@ export interface Settings {
   killSignal: KillSignal // default signal sent by the Kill action
   analytics: boolean // opt-in to crash/error reporting (Sentry)
   grouping: boolean // collapse ports sharing a pid into one process row
+  resolveContainersNames: boolean // query Docker socket to name containers behind ports
 }

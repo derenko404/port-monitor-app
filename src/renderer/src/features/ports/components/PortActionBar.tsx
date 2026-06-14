@@ -4,12 +4,13 @@ import { Check, Copy, Globe, Info, OctagonX, Pin, PinOff } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { PortEntry } from 'src/shared/types'
-import { PortPill } from './PortPill'
+import { PortRowLabel } from './PortRowLabel'
 
 interface PortActionBarProps {
   port: PortEntry
   pinned: boolean
-  showPort?: boolean // label the bar with its port (grouped rows with >1 port)
+  showPort?: boolean
+  label?: string
   onInfo: (p: PortEntry) => void
   onOpenExternal: (p: PortEntry) => void
   onCopyKill: (p: PortEntry) => void
@@ -21,6 +22,7 @@ export function PortActionBar({
   port,
   pinned,
   showPort,
+  label,
   onInfo,
   onOpenExternal,
   onCopyKill,
@@ -32,9 +34,8 @@ export function PortActionBar({
 
   return (
     <div className="mx-8 mb-2 flex items-center gap-2 rounded-b-lg border-x border-b border-border/40 bg-muted/40 px-3 py-1.5 text-foreground">
-      {showPort && <PortPill port={port.port} className="text-[11px]" />}
+      {showPort && <PortRowLabel port={port.port} label={label} />}
 
-      {/* safe actions */}
       <div className="flex items-center gap-0.5">
         <Button
           variant="ghost"
@@ -81,7 +82,7 @@ export function PortActionBar({
         </Button>
       </div>
 
-      <div className="flex-1" />
+      {!showPort && <div className="flex-1" />}
 
       {/* destructive action, separated */}
       <div className="mx-0.5 h-5 w-px bg-border" />

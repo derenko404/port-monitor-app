@@ -14,6 +14,8 @@ No more `lsof -i :3000` then `kill -9`. Open the app, find the port, done.
 - ⚡ **One-click kill** — terminate a process straight from the row (with confirm)
 - 🔎 **Instant search** — filter by port, app name, or PID
 - 📌 **Pin ports** — keep your dev ports (3000, 5432, …) at the top
+- 🧩 **Group by process** — collapse ports from the same PID into one row
+- 🐳 **Resolve container names** — names the real service behind virtualized ports (e.g. Docker containers under `com.docker.backend`)
 - 🎨 **App icons** — recognizes node, Docker, Postgres, Redis, nginx, and more
 - 🔄 **Auto-refresh** — configurable interval, or refresh on demand
 - 🌗 **Light / dark / system** theme
