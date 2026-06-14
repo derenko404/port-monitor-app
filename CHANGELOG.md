@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.4.1](https://github.com/derenko404/port-monitor-app/compare/v1.4.0...v1.4.1) (2026-06-14)
+
+### Bug Fixes
+
+* containers parent kill group ([4388700](https://github.com/derenko404/port-monitor-app/commit/43887001f707ba390bc27415ca32c5c4e54e77a8))
+
 ## [1.4.0](https://github.com/derenko404/port-monitor-app/compare/v1.3.1...v1.4.0) (2026-06-14)
 
 ### Features
