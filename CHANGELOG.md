@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.5.2](https://github.com/derenko404/port-monitor-app/compare/v1.5.1...v1.5.2) (2026-06-14)
+
+### Bug Fixes
+
+* fix actions bar border-radius and spacing ([b62c800](https://github.com/derenko404/port-monitor-app/commit/b62c8002dd2bde2f9a3b757e5bd3191da1fd167c))
+
 ## [1.5.1](https://github.com/derenko404/port-monitor-app/compare/v1.5.0...v1.5.1) (2026-06-14)
 
 ### Bug Fixes
