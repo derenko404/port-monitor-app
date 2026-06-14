@@ -46,13 +46,11 @@ brew upgrade --cask port-monitor
 ### First launch
 
 The app isn't signed to run locally (no paid Apple Developer cert), so macOS blocks
-it the first time — whether installed via Homebrew or manually. Bypass it once, either way:
+it the first time — whether installed via Homebrew or manually. Clear quarantine once from Terminal, then open it normally:
 
-- **System Settings → Privacy & Security → Open Anyway** (after trying to open it once), or
-- clear quarantine from Terminal:
-  ```bash
-  xattr -dr com.apple.quarantine "/Applications/Port Monitor.app"
-  ```
+```bash
+xattr -dr com.apple.quarantine "/Applications/Port Monitor.app"
+```
 
 You only do this once per install.
 

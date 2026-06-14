@@ -6,7 +6,7 @@ interface AppHeaderProps {
 
 export function AppHeader({ title, actions }: AppHeaderProps): React.JSX.Element {
   return (
-    <header className="relative flex items-center gap-2 border-b p-2 pl-[76px] [-webkit-app-region:drag]">
+    <header className="relative flex items-center gap-2 border-b p-2 pl-19 [-webkit-app-region:drag]">
       <h1 className="absolute left-1/2 flex -translate-x-1/2 items-center gap-2 text-sm font-semibold">
         {title}
       </h1>

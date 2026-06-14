@@ -39,6 +39,7 @@ function sanitize(s: Settings): Settings {
     theme: ['dark', 'light', 'system'].includes(s.theme) ? s.theme : 'system',
     killSignal: s.killSignal === 'SIGKILL' ? 'SIGKILL' : 'SIGTERM',
     analytics: s.analytics !== false, // default on
+    grouping: s.grouping === true, // default off
     pinned: s.pinned.filter((port) => Number.isInteger(port)),
     ...sanitizeRange(s)
   }

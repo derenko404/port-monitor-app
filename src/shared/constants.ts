@@ -14,5 +14,6 @@ export const DEFAULT_SETTINGS: Settings = {
   portMin: PORT_MIN,
   portMax: PORT_MAX,
   killSignal: 'SIGTERM',
-  analytics: true
+  analytics: true,
+  grouping: false
 }

@@ -116,6 +116,17 @@ function Settings(): React.JSX.Element {
           <SettingRow label={t('settings.portRange.label')} desc={t('settings.portRange.desc')}>
             <PortRangeField />
           </SettingRow>
+          <SettingRow
+            label={t('settings.grouping.label')}
+            desc={t('settings.grouping.desc')}
+            htmlFor="grouping"
+          >
+            <Switch
+              id="grouping"
+              checked={settings.grouping}
+              onCheckedChange={(v) => updateSettings({ grouping: v })}
+            />
+          </SettingRow>
           <SettingRow label={t('settings.killSignal.label')} desc={t('settings.killSignal.desc')}>
             <Select
               value={settings.killSignal}

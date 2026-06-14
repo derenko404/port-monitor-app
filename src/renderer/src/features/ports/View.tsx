@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { killCommand, localhostUrl } from 'src/shared/ports'
-import { PortEntry } from 'src/shared/types'
+import { PortEntry, PortGroup } from 'src/shared/types'
 import { AppHeader } from '../shared/components/AppHeader'
 import { useColumns } from './columns'
 import { ForceKillPortDialog } from './components/ForceKillPortDialog'
@@ -17,6 +17,15 @@ import { PortsSearch } from './components/PortsSearch'
 import { PortsTable } from './components/PortsTable'
 import { usePortOperations } from './hooks/use-port-operations'
 import { usePortsList } from './hooks/use-ports-list'
+
+// search hits a group if its command, pid, or any of its ports match
+function matchesGroup(g: PortGroup, query: string): boolean {
+  const q = query.trim().toLowerCase()
+  if (!q) return true
+  if (g.command.toLowerCase().includes(q)) return true
+  if (String(g.pid).includes(q)) return true
+  return g.ports.some((p) => String(p.port).includes(q))
+}
 
 function Ports(): React.JSX.Element {
   const nav = useNavigate()
@@ -39,8 +48,10 @@ function Ports(): React.JSX.Element {
 
   const [q, setQ] = useState('')
   const [infoPort, setInfoPort] = useState<PortEntry | null>(null)
-  const [selected, setSelected] = useState<PortEntry | null>(null)
+  const [selected, setSelected] = useState<PortGroup | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+
+  const portCount = data.reduce((n, g) => n + g.ports.length, 0)
 
   // track a search once per session (when the box goes from empty to non-empty)
   const onSearch = (value: string): void => {
@@ -66,7 +77,7 @@ function Ports(): React.JSX.Element {
             {t('ports.title')}
             {loaded && !error && (
               <span className="rounded-full bg-sky-500/10 px-1.5 py-0.5 text-[11px] font-medium text-sky-600 tabular-nums dark:text-sky-400">
-                {data.length}
+                {portCount}
               </span>
             )}
           </>
@@ -105,25 +116,32 @@ function Ports(): React.JSX.Element {
               data={data}
               filter={q}
               loading={!loaded}
-              onInfo={setInfoPort}
-              onKill={askKill}
+              onInfo={(g) => setInfoPort(g.ports[0])}
+              onKill={(g) => askKill(g.ports[0])}
               rank={rank}
-              rowKey={(p) => String(p.port)}
-              selectedKey={selected ? String(selected.port) : null}
+              matchesQuery={matchesGroup}
+              rowKey={(g) => `${g.pid}:${g.ports[0].port}`}
+              selectedKey={selected ? `${selected.pid}:${selected.ports[0].port}` : null}
               onSelect={setSelected}
-              renderExpanded={(p) => (
-                <PortActionBar
-                  port={p}
-                  pinned={!!p.pinned}
-                  onInfo={setInfoPort}
-                  onOpenExternal={(x) => {
-                    api.track('open_browser', { source: 'app' })
-                    api.openExternal(localhostUrl(x.port))
-                  }}
-                  onCopyKill={(x) => navigator.clipboard.writeText(killCommand(x.pid))}
-                  onTogglePin={togglePin}
-                  onKill={askKill}
-                />
+              renderExpanded={(g) => (
+                <div className="flex flex-col">
+                  {g.ports.map((p) => (
+                    <PortActionBar
+                      key={p.port}
+                      port={p}
+                      pinned={!!p.pinned}
+                      showPort={g.ports.length > 1}
+                      onInfo={setInfoPort}
+                      onOpenExternal={(x) => {
+                        api.track('open_browser', { source: 'app' })
+                        api.openExternal(localhostUrl(x.port))
+                      }}
+                      onCopyKill={(x) => navigator.clipboard.writeText(killCommand(x.pid))}
+                      onTogglePin={togglePin}
+                      onKill={askKill}
+                    />
+                  ))}
+                </div>
               )}
             />
           )}

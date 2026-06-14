@@ -14,6 +14,7 @@ import { Loader2, X } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { KillSignal, PortEntry } from 'src/shared/types'
 import AppIcon from './AppIcon'
+import { PortPill } from './PortPill'
 
 interface KillPortDialogProps {
   target: PortEntry | null
@@ -50,9 +51,7 @@ export function KillPortDialog({
             <AlertDialogTitle className="text-sm">{t('dialogs.kill.title')}</AlertDialogTitle>
             <div className="flex items-center gap-2 text-xs">
               <span className="font-medium text-foreground">{target?.command}</span>
-              <span className="rounded bg-sky-500/10 px-1.5 py-0.5 font-mono font-medium text-sky-700 dark:text-sky-400">
-                :{target?.port}
-              </span>
+              {target && <PortPill port={target.port} className="text-[11px] font-medium" />}
             </div>
           </div>
           <AlertDialogDescription className="text-xs leading-relaxed">

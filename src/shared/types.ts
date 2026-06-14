@@ -8,6 +8,14 @@ export interface PortEntry {
   pinned?: boolean // set in renderer from persisted pins
 }
 
+// one process (pid) and every port it listens on; ports sorted ascending, >=1
+export interface PortGroup {
+  pid: number
+  command: string
+  started: number | null
+  ports: PortEntry[]
+}
+
 export type Theme = 'dark' | 'light' | 'system'
 export type KillSignal = 'SIGTERM' | 'SIGKILL'
 
@@ -29,4 +37,5 @@ export interface Settings {
   portMax: number
   killSignal: KillSignal // default signal sent by the Kill action
   analytics: boolean // opt-in to crash/error reporting (Sentry)
+  grouping: boolean // collapse ports sharing a pid into one process row
 }

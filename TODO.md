@@ -11,13 +11,9 @@ Feature ideas, grouped by value.
 
 ## Discoverability
 
-- [ ] **Group by app** — collapse rows sharing a pid/command (e.g. Code Helper)
+- [x] **Group by app** — collapse rows sharing a pid/command (e.g. Code Helper)
 - [x] **Favorite / pin ports** — pin dev ports (3000, 5432) to top
 - [x] **Highlight "mine"** — flag dev ports (3000–9999) vs system ports
-
-## Awareness
-
-- [ ] **Diff since last refresh** — subtle "new" tag on freshly-opened ports
 
 ## Polish
 
@@ -29,7 +25,6 @@ Feature ideas, grouped by value.
 ## Settings depth
 
 - [x] Port range filter
-- [ ] Refresh-on-open toggle
 - [x] Kill signal choice (SIGTERM / SIGKILL default)
 
 ## Suggested next (best utility-per-effort)

@@ -4,6 +4,7 @@ import {
   getCoreRowModel,
   getFilteredRowModel,
   getSortedRowModel,
+  RowData,
   SortingState,
   useReactTable
 } from '@tanstack/react-table'
@@ -13,6 +14,14 @@ import { useTranslation } from 'react-i18next'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@ui/table'
 import { cn } from '@renderer/features/shared/lib/utils'
 
+// per-column extra classes (e.g. width hints) carried on ColumnDef.meta
+declare module '@tanstack/react-table' {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  interface ColumnMeta<TData extends RowData, TValue> {
+    className?: string
+  }
+}
+
 interface PortsTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
   data: TData[]
@@ -21,6 +30,7 @@ interface PortsTableProps<TData, TValue> {
   onInfo: (row: TData) => void
   onKill: (row: TData) => void
   rank?: (row: TData) => number
+  matchesQuery?: (row: TData, query: string) => boolean
   rowKey: (row: TData) => string
   selectedKey: string | null
   onSelect: (row: TData | null) => void
@@ -35,6 +45,7 @@ export function PortsTable<TData, TValue>({
   onInfo,
   onKill,
   rank: rankOf,
+  matchesQuery,
   rowKey,
   selectedKey,
   onSelect,
@@ -51,7 +62,9 @@ export function PortsTable<TData, TValue>({
     onSortingChange: setSorting,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
-    getFilteredRowModel: getFilteredRowModel()
+    getFilteredRowModel: getFilteredRowModel(),
+    // custom matcher so a query can hit any field of the row (e.g. any port in a group)
+    globalFilterFn: matchesQuery ? (row, _id, value) => matchesQuery(row.original, value) : 'auto'
   })
 
   // float to the top by caller-supplied rank; column-sort order kept within each tier
@@ -117,7 +130,8 @@ export function PortsTable<TData, TValue>({
                   className={cn(
                     'sticky top-0 h-7 select-none bg-card px-3 text-[10px] font-medium uppercase tracking-[0.08em] transition-colors',
                     sortable && 'cursor-pointer hover:text-foreground',
-                    sorted ? 'text-foreground' : 'text-muted-foreground/60'
+                    sorted ? 'text-foreground' : 'text-muted-foreground/60',
+                    h.column.columnDef.meta?.className
                   )}
                   onClick={h.column.getToggleSortingHandler()}
                 >
@@ -165,7 +179,10 @@ export function PortsTable<TData, TValue>({
                     />
                   </TableCell>
                   {row.getVisibleCells().map((c) => (
-                    <TableCell key={c.id} className="py-2 px-3">
+                    <TableCell
+                      key={c.id}
+                      className={cn('py-2 px-3', c.column.columnDef.meta?.className)}
+                    >
                       {flexRender(c.column.columnDef.cell, c.getContext())}
                     </TableCell>
                   ))}

@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { PortEntry } from 'src/shared/types'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@ui/dialog'
 import AppIcon from './AppIcon'
+import { PortPill } from './PortPill'
 
 interface PortInfoDialogProps {
   port: PortEntry | null
@@ -28,9 +29,7 @@ function PortInfoDialog({ port: p, onClose }: PortInfoDialogProps): React.JSX.El
           </span>
           <div className="flex flex-col items-center gap-1.5">
             <DialogTitle className="text-sm">{p?.command}</DialogTitle>
-            <span className="rounded bg-sky-500/10 px-1.5 py-0.5 font-mono text-xs font-medium text-sky-700 dark:text-sky-400">
-              :{p?.port}
-            </span>
+            {p && <PortPill port={p.port} className="font-medium" />}
           </div>
         </DialogHeader>
 
