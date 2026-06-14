@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.3.0](https://github.com/derenko404/port-monitor-app/compare/v1.2.1...v1.3.0) (2026-06-14)
+
+### Features
+
+* add ports grouping ([c503435](https://github.com/derenko404/port-monitor-app/commit/c5034351c12d948d086886e8ec527f282de29caf))
+
 ## [1.2.1](https://github.com/derenko404/port-monitor-app/compare/v1.2.0...v1.2.1) (2026-06-14)
 
 ## [1.2.0](https://github.com/derenko404/port-monitor-app/compare/v1.1.3...v1.2.0) (2026-06-14)
