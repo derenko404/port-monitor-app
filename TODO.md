@@ -11,7 +11,7 @@ Feature ideas, grouped by value.
 
 - [ ] **UDP toggle** — currently TCP-only; setting to include UDP (protocol column already exists)
 - [ ] **Group by app** — collapse rows sharing a pid/command (e.g. Code Helper)
-- [ ] **Favorite / pin ports** — pin dev ports (3000, 5432) to top
+- [x] **Favorite / pin ports** — pin dev ports (3000, 5432) to top
 - [ ] **Highlight "mine"** — flag dev ports (3000–9999) vs system ports
 
 ## Awareness

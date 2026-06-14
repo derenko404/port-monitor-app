@@ -21,10 +21,16 @@ jobs:
 
       - run: npm ci
 
+      # Pre-create the release once so the parallel arch publishers only UPLOAD
+      # (avoids the two-publisher "create release" race that drops the .dmg).
+      - run: gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --generate-notes --verify-tag || true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       # typecheck + electron-vite build (compiles main/preload/renderer)
       - run: npm run build
 
-      # package arm64 + x64 dmg and upload to the GitHub Release for this tag
+      # package arm64 + x64 dmg and upload to the existing release
       - run: npx electron-builder --mac --publish always
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
