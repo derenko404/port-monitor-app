@@ -4,7 +4,9 @@
     "cancel": "Cancel",
     "close": "Close",
     "kill": "Kill",
-    "killing": "Killing…"
+    "killing": "Killing…",
+    "stop": "Stop",
+    "stopping": "Stopping…"
   },
   "ports": {
     "title": "Ports",
@@ -15,7 +17,8 @@
     "empty": "No ports",
     "count_one": "{{count}} port",
     "count_other": "{{count}} ports",
-    "parentBadge": "parent",
+    "parentBadge": "process",
+    "engineBadge": "engine",
     "error": {
       "permissionTitle": "Can't read ports",
       "permissionDesc": "Port Monitor needs permission to list listening ports. Grant it access in System Settings → Privacy & Security, then retry.",
@@ -35,10 +38,12 @@
       "copyKill": "Copy kill command",
       "pin": "Pin",
       "unpin": "Unpin",
-      "kill": "Kill process (⌘⌫)",
+      "kill": "Kill process",
+      "stopContainer": "Stop this container",
       "killContainer": "Can't kill — this would stop the parent container service, not this container",
       "killGrouped": "Can't kill one port — they share a process. Use the Kill above to stop it",
-      "killParent": "Kill the process and all its children"
+      "killProcess": "Kill the process and all its children",
+      "killEngine": "Kill the engine and its containers"
     },
     "info": {
       "protocol": "Protocol",
@@ -59,6 +64,13 @@
       "title": "Still running — force kill?",
       "desc": "It ignored SIGTERM. SIGKILL force-stops it immediately.",
       "confirm": "Force kill"
+    },
+    "stop": {
+      "title": "Stop this container?",
+      "desc": "Gracefully stops the container via its container service.",
+      "confirm": "Stop container",
+      "timeout": "Stop command timed out — the container may be slow to stop. Try again or check its container service.",
+      "failed": "Couldn't stop the container. Is its container service still running?"
     }
   },
   "settings": {

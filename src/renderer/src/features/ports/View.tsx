@@ -5,28 +5,29 @@ import { RefreshCw, Settings as SettingsIcon } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
-import { killCommand, localhostUrl } from 'src/shared/ports'
 import { PortEntry, PortGroup } from 'src/shared/types'
 import { AppHeader } from '../shared/components/AppHeader'
 import { useColumns } from './columns'
+import { ExpandedGroup } from './components/ExpandedGroup'
 import { ForceKillPortDialog } from './components/ForceKillPortDialog'
 import { KillPortDialog } from './components/KillPortDialog'
-import { ParentKillBar } from './components/ParentKillBar'
-import { PortActionBar } from './components/PortActionBar'
 import PortInfoDialog from './components/PortInfoDialog'
 import { PortsError } from './components/PortsError'
 import { PortsSearch } from './components/PortsSearch'
 import { PortsTable } from './components/PortsTable'
-import { usePortOperations } from './hooks/use-port-operations'
+import { StopContainerDialog } from './components/StopContainerDialog'
+import { useKillProcess } from './hooks/use-kill-process'
 import { usePortsList } from './hooks/use-ports-list'
+import { useStopContainer } from './hooks/use-stop-container'
 
-// search hits a group if its command, pid, or any of its ports match
+// search hits a group if its command, pid, or any of its ports (number or resolved
+// container command) match
 function matchesGroup(g: PortGroup, query: string): boolean {
   const q = query.trim().toLowerCase()
   if (!q) return true
   if (g.command.toLowerCase().includes(q)) return true
   if (String(g.pid).includes(q)) return true
-  return g.ports.some((p) => String(p.port).includes(q))
+  return g.ports.some((p) => String(p.port).includes(q) || p.command.toLowerCase().includes(q))
 }
 
 function Ports(): React.JSX.Element {
@@ -34,19 +35,26 @@ function Ports(): React.JSX.Element {
   const { t } = useTranslation()
   const columns = useColumns()
 
-  const { data, loaded, error, spinning, refresh, rank } = usePortsList()
+  const { data, loaded, error, spinning, refresh, rank, togglePin } = usePortsList()
   const {
-    togglePin,
     killSignal,
     killTarget,
     forceTarget,
-    busy,
+    busy: killBusy,
     askKill,
     cancelKill,
     confirmKill,
     cancelForce,
     confirmForce
-  } = usePortOperations()
+  } = useKillProcess()
+  const {
+    stopTarget,
+    stopError,
+    busy: stopBusy,
+    askStop,
+    cancelStop,
+    confirmStop
+  } = useStopContainer()
 
   const [q, setQ] = useState('')
   const [infoPort, setInfoPort] = useState<PortEntry | null>(null)
@@ -123,39 +131,24 @@ function Ports(): React.JSX.Element {
               filter={q}
               loading={!loaded}
               onInfo={(g) => setInfoPort(g.ports[0])}
-              onKill={(g) => askKill(g.ports[0])}
+              onKill={(g) =>
+                g.kind === 'container-group' || g.ports.length > 1
+                  ? askKill({ ...g.ports[0], command: g.command, port: 0 })
+                  : askKill(g.ports[0])
+              }
               rank={rank}
               matchesQuery={matchesGroup}
               rowKey={(g) => `${g.pid}:${g.ports[0].port}`}
               selectedKey={selected ? `${selected.pid}:${selected.ports[0].port}` : null}
               onSelect={setSelected}
               renderExpanded={(g) => (
-                <div className="flex flex-col">
-                  {g.ports.length > 1 && (
-                    <ParentKillBar
-                      command={g.command}
-                      // whole-process kill: no single port (port 0 → dialog hides the pill)
-                      onKill={() => askKill({ ...g.ports[0], command: g.command, port: 0 })}
-                    />
-                  )}
-                  {g.ports.map((p) => (
-                    <PortActionBar
-                      key={p.port}
-                      port={p}
-                      pinned={!!p.pinned}
-                      showPort={g.ports.length > 1}
-                      label={p.command !== g.command ? p.command : undefined}
-                      onInfo={setInfoPort}
-                      onOpenExternal={(x) => {
-                        api.track('open_browser', { source: 'app' })
-                        api.openExternal(localhostUrl(x.port))
-                      }}
-                      onCopyKill={(x) => navigator.clipboard.writeText(killCommand(x.pid))}
-                      onTogglePin={togglePin}
-                      onKill={askKill}
-                    />
-                  ))}
-                </div>
+                <ExpandedGroup
+                  group={g}
+                  onInfo={setInfoPort}
+                  onTogglePin={togglePin}
+                  onKill={askKill}
+                  onStop={askStop}
+                />
               )}
             />
           )}
@@ -168,7 +161,7 @@ function Ports(): React.JSX.Element {
 
       <KillPortDialog
         target={killTarget}
-        busy={busy}
+        busy={killBusy}
         killSignal={killSignal}
         onConfirm={confirmKill}
         onCancel={cancelKill}
@@ -176,9 +169,17 @@ function Ports(): React.JSX.Element {
 
       <ForceKillPortDialog
         target={forceTarget}
-        busy={busy}
+        busy={killBusy}
         onConfirm={confirmForce}
         onCancel={cancelForce}
+      />
+
+      <StopContainerDialog
+        target={stopTarget?.port ?? null}
+        busy={stopBusy}
+        error={stopError}
+        onConfirm={confirmStop}
+        onCancel={cancelStop}
       />
     </div>
   )

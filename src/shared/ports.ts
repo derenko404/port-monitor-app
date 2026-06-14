@@ -25,15 +25,24 @@ export const groupByPid = (ports: PortEntry[]): PortGroup[] => {
   return [...byPid.values()].map((ps) => {
     const sorted = [...ps].sort((a, b) => a.port - b.port)
     const { pid, command, started } = sorted[0]
-    return { pid, command, started, ports: sorted }
+    // 'process' by default; main upgrades container-service proxies after resolving
+    return { pid, command, started, ports: sorted, kind: 'process-group' as const }
   })
 }
 
+// ungrouped: each port becomes its own plain row (a flattened container reads as
+// itself and keeps Stop via its resolved container — no proxy aggregate, so 'process')
 export const toRows = (groups: PortGroup[], grouping: boolean): PortGroup[] =>
   grouping
     ? groups
     : groups.flatMap((g) =>
-        g.ports.map((p) => ({ pid: p.pid, command: p.command, started: p.started, ports: [p] }))
+        g.ports.map((p) => ({
+          pid: p.pid,
+          command: p.command,
+          started: p.started,
+          ports: [p],
+          kind: 'process-group' as const
+        }))
       )
 
 // local URL opened in the browser for a listening port

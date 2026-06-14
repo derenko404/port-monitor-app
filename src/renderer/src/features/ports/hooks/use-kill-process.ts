@@ -15,8 +15,7 @@ async function waitGone(pid: number, ms = 1500): Promise<boolean> {
   return false
 }
 
-interface UsePortOperations {
-  togglePin: (p: PortEntry) => void
+interface UseKillProcess {
   killSignal: KillSignal
   killTarget: PortEntry | null
   forceTarget: PortEntry | null
@@ -29,26 +28,13 @@ interface UsePortOperations {
 }
 
 // kill flow: SIGTERM with grace-wait, escalating to a SIGKILL confirm if ignored.
-// re-lists via the shared refresh primitive once a process actually exits — no
-// reference to the list hook.
-export function usePortOperations(): UsePortOperations {
-  const { settings, updateSettings } = useSettings()
+// re-lists via the shared refresh primitive once a process actually exits.
+export function useKillProcess(): UseKillProcess {
+  const { settings } = useSettings()
   const refresh = useRefreshPorts()
   const [killTarget, setKillTarget] = useState<PortEntry | null>(null)
   const [forceTarget, setForceTarget] = useState<PortEntry | null>(null)
-  const [busy, setBusy] = useState(false) // kill in progress (SIGTERM + grace wait, or SIGKILL)
-
-  const togglePin = useCallback(
-    (p: PortEntry) => {
-      const isPinned = settings.pinned.includes(p.port)
-      const pinned = isPinned
-        ? settings.pinned.filter((x) => x !== p.port)
-        : [...settings.pinned, p.port]
-      updateSettings({ pinned })
-      api.track('pin', { pinned: !isPinned, port: p.port })
-    },
-    [settings.pinned, updateSettings]
-  )
+  const [busy, setBusy] = useState(false)
 
   const confirmKill = useCallback(async () => {
     if (!killTarget || busy) return
@@ -77,7 +63,6 @@ export function usePortOperations(): UsePortOperations {
   }, [forceTarget, busy, refresh])
 
   return {
-    togglePin,
     killSignal: settings.killSignal,
     killTarget,
     forceTarget,

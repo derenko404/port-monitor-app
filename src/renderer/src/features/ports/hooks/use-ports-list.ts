@@ -1,7 +1,7 @@
 import { api } from '@renderer/features/shared/lib/api'
 import { portsAtom, portsErrorAtom, portsLoadedAtom, portsLoadingAtom } from '@renderer/store/ports'
 import { useAtomValue } from 'jotai'
-import { useEffect } from 'react'
+import { useCallback, useEffect } from 'react'
 import { groupRank, toRows } from 'src/shared/ports'
 import { PortEntry, PortGroup, PortsError } from 'src/shared/types'
 import { useSettings } from '../../shared/hooks/use-settings'
@@ -14,16 +14,29 @@ interface UsePortsList {
   spinning: boolean
   refresh: () => Promise<void>
   rank: (g: PortGroup) => number
+  togglePin: (p: PortEntry) => void
 }
 
 // read side of the port list: fetch, range filter, pin tagging, auto-refresh
 export function usePortsList(): UsePortsList {
-  const { settings } = useSettings()
+  const { settings, updateSettings } = useSettings()
   const ports = useAtomValue(portsAtom)
   const loaded = useAtomValue(portsLoadedAtom)
   const error = useAtomValue(portsErrorAtom)
   const spinning = useAtomValue(portsLoadingAtom)
   const refresh = useRefreshPorts()
+
+  const togglePin = useCallback(
+    (p: PortEntry) => {
+      const isPinned = settings.pinned.includes(p.port)
+      const pinned = isPinned
+        ? settings.pinned.filter((x) => x !== p.port)
+        : [...settings.pinned, p.port]
+      updateSettings({ pinned })
+      api.track('pin', { pinned: !isPinned, port: p.port })
+    },
+    [settings.pinned, updateSettings]
+  )
 
   const inRange = (p: PortEntry): boolean =>
     settings.pinned.includes(p.port) || (p.port >= settings.portMin && p.port <= settings.portMax)
@@ -53,5 +66,5 @@ export function usePortsList(): UsePortsList {
     return () => clearInterval(id)
   }, [settings.polling, settings.pollInterval, refresh])
 
-  return { data, loaded, error, spinning, refresh, rank: (g) => groupRank(g, settings) }
+  return { data, loaded, error, spinning, refresh, rank: (g) => groupRank(g, settings), togglePin }
 }

@@ -9,6 +9,9 @@ const api = {
   listPorts: () => ipcRenderer.invoke(IPC.ports.list),
   killPort: (pid: number, signal?: string) => ipcRenderer.invoke(IPC.ports.kill, pid, signal),
   isAlive: (pid: number) => ipcRenderer.invoke(IPC.ports.alive, pid),
+  // command = the proxy group's command (routes to its resolver); handle = container id
+  stopContainer: (command: string, handle: string) =>
+    ipcRenderer.invoke(IPC.container.stop, command, handle),
   onShown: (cb: () => void) => {
     const handler = (): void => cb()
     ipcRenderer.on(IPC.popup.shown, handler)

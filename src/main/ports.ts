@@ -46,6 +46,7 @@ export async function listListeningPorts(resolveContainersNames = true): Promise
       const m = val.match(/:(\d+)$/)
       if (m) {
         entries.push({
+          kind: 'process',
           command,
           pid,
           port: Number(m[1]),
@@ -71,17 +72,22 @@ export async function listListeningPorts(resolveContainersNames = true): Promise
   return { groups, error: null }
 }
 
-// For proxy groups (e.g. docker) rename each port to the service behind it. The
-// group command stays as the proxy; downstream reads each port like any process.
+// For proxy groups (e.g. docker) mark the group container-group and rename each
+// port to the container behind it. The group command stays the proxy; each port
+// reads as its container (name + stop handle).
 async function resolveContainerNames(groups: PortGroup[]): Promise<void> {
   for (const g of groups) {
     const resolver = containerNamesResolverFor(g.command)
     if (!resolver) continue
-    const names = await resolver.resolve(g.ports.map((p) => p.port))
-    for (const port of g.ports) {
-      const name = names.get(port.port)
-      if (name) port.command = name
-    }
+    g.kind = 'container-group'
+    const resolved = await resolver.resolve(g.ports.map((p) => p.port))
+    // a resolved port becomes a container port (kind + handle); unresolved stays plain
+    g.ports = g.ports.map((port) => {
+      const svc = resolved.get(port.port)
+      return svc
+        ? { ...port, kind: 'container', command: svc.name, container: { id: svc.handle } }
+        : port
+    })
   }
 }
 

@@ -3,11 +3,11 @@ import { PortPill } from './PortPill'
 
 interface PortRowLabelProps {
   port: number
-  label?: string // service name (e.g. docker container) when the port resolves to one
+  label?: string // service name (e.g. a container) when the port resolves to one
 }
 
 // expanded-row leading block: the port pill plus, when the port resolves to a
-// distinct service, its icon + name (clamped to the available width)
+// distinct service, its icon + name (clamped to width)
 export function PortRowLabel({ port, label }: PortRowLabelProps): React.JSX.Element {
   return (
     <div className="flex min-w-0 flex-1 items-center gap-2">

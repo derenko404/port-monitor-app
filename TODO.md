@@ -26,10 +26,3 @@ Feature ideas, grouped by value.
 
 - [x] Port range filter
 - [x] Kill signal choice (SIGTERM / SIGKILL default)
-
-## Suggested next (best utility-per-effort)
-
-1. Open in browser
-2. Force-kill fallback
-3. Tray count badge
-4. Keyboard nav

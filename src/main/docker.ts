@@ -6,6 +6,7 @@ const RETRIES = 3
 const TIMEOUT_MS = 1500
 
 export interface DockerService {
+  id: string // container id — used to stop it
   image: string
   name: string // container name, leading slash stripped
 }
@@ -17,6 +18,7 @@ interface ContainerPort {
 }
 
 interface Container {
+  Id?: string
   Names?: string[]
   Image?: string
   Ports?: ContainerPort[]
@@ -50,6 +52,35 @@ function fetchContainers(): Promise<Container[]> {
   })
 }
 
+// POST /containers/{id}/stop — graceful stop (SIGTERM, then SIGKILL after `t`s).
+// 204 = stopped, 304 = already stopped (both fine).
+export function stopContainer(
+  id: string,
+  timeoutSec = 5
+): Promise<{ ok: boolean; error?: string }> {
+  return new Promise((resolve) => {
+    const req = request(
+      {
+        socketPath: SOCKET,
+        path: `/containers/${encodeURIComponent(id)}/stop?t=${timeoutSec}`,
+        method: 'POST',
+        timeout: (timeoutSec + 5) * 1000
+      },
+      (res) => {
+        res.resume() // drain
+        res.on('end', () => {
+          const code = res.statusCode ?? 0
+          if (code === 204 || code === 304) resolve({ ok: true })
+          else resolve({ ok: false, error: `docker stop status ${code}` })
+        })
+      }
+    )
+    req.on('timeout', () => req.destroy(new Error('docker stop timeout')))
+    req.on('error', (err) => resolve({ ok: false, error: err.message }))
+    req.end()
+  })
+}
+
 // Map every published host port to the container behind it. Returns an empty map
 // when Docker isn't running or the socket is unreachable — callers treat that as
 // "no docker info", never an error. Retries up to RETRIES times on failure.
@@ -60,10 +91,11 @@ export async function dockerServicesByPort(): Promise<Map<number, DockerService>
     try {
       const containers = await fetchContainers()
       for (const c of containers) {
+        const id = c.Id ?? ''
         const image = c.Image ?? ''
         const name = (c.Names?.[0] ?? '').replace(/^\//, '')
         for (const p of c.Ports ?? []) {
-          if (p.PublicPort) map.set(p.PublicPort, { image, name })
+          if (p.PublicPort) map.set(p.PublicPort, { id, image, name })
         }
       }
       return map

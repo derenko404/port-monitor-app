@@ -6,6 +6,9 @@ export const IPC = {
     alive: 'ports:alive',
     changed: 'ports:changed'
   },
+  container: {
+    stop: 'container:stop'
+  },
   settings: {
     get: 'settings:get',
     set: 'settings:set'

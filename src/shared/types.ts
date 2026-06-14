@@ -1,4 +1,4 @@
-export interface PortEntry {
+interface PortEntryBase {
   command: string
   pid: number
   port: number
@@ -8,11 +8,31 @@ export interface PortEntry {
   pinned?: boolean // set in renderer from persisted pins
 }
 
+// a plain listening port owned by its pid
+export interface ProcessPort extends PortEntryBase {
+  kind: 'process'
+}
+
+// a port resolved to a container behind a proxy (docker, …); carries its handle/metadata
+export interface ContainerPort extends PortEntryBase {
+  kind: 'container'
+  container: { id: string }
+}
+
+export type PortEntry = ProcessPort | ContainerPort
+
+export const isContainerPort = (p: PortEntry): p is ContainerPort => p.kind === 'container'
+
+// how a group is handled: a normal process, or a container-service proxy (docker,
+// podman, …) whose ports map to containers — stopped individually, not killed by pid
+export type GroupType = 'process-group' | 'container-group'
+
 export interface PortGroup {
   pid: number
   command: string
   started: number | null
   ports: PortEntry[]
+  kind: GroupType
 }
 
 export type Theme = 'dark' | 'light' | 'system'

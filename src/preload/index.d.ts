@@ -9,6 +9,7 @@ declare global {
       listPorts: () => Promise<ListPortsResult>
       killPort: (pid: number, signal?: string) => Promise<{ ok: boolean; error?: string }>
       isAlive: (pid: number) => Promise<boolean>
+      stopContainer: (command: string, handle: string) => Promise<{ ok: boolean; error?: string }>
       onShown: (cb: () => void) => () => void
       onPortsChanged: (cb: () => void) => () => void
       getSettings: () => Promise<Settings>

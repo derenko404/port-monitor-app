@@ -8,6 +8,21 @@ No more `lsof -i :3000` then `kill -9`. Open the app, find the port, done.
   <img src="docs/row-actions.png" alt="Port list with row actions" width="320" />
 </p>
 
+<p align="center">
+  <img src="docs/process-group.png" alt="Ports grouped by process, expanded with per-port actions" width="420" /><br />
+  <sub>Ports grouped by process, expanded with per-port actions</sub>
+</p>
+
+<p align="center">
+  <img src="docs/containers.png" alt="Grouped Docker container ports with per-container Stop and engine Kill" width="420" /><br />
+  <sub>Grouped Docker container ports with per-container Stop and engine Kill</sub>
+</p>
+
+<p align="center">
+  <img src="docs/settings.png" alt="Settings — monitoring, grouping, container resolution, theme" width="420" /><br />
+  <sub>Settings — monitoring, grouping, container resolution, theme</sub>
+</p>
+
 ## Features
 
 - 🔌 **Live port list** — every listening TCP port, the app behind it, PID, and uptime

@@ -21,6 +21,7 @@ import { isKnownTech } from '../shared/tech'
 import { PortEntry, PortGroup, Settings } from '../shared/types'
 import { capture, isFreshInstall, shutdownAnalytics } from './analytics'
 import i18n from './i18n'
+import { containerNamesResolverFor } from './container-names-resolver'
 import { isPidAlive, killPid, listListeningPorts } from './ports'
 import { applyLoginItem, getSettings, setSettings } from './settings'
 
@@ -212,6 +213,10 @@ app.whenReady().then(() => {
 
   ipcMain.handle(IPC.ports.kill, (_e, pid: number, signal?: NodeJS.Signals) => killPid(pid, signal))
   ipcMain.handle(IPC.ports.alive, (_e, pid: number) => isPidAlive(pid))
+  ipcMain.handle(IPC.container.stop, (_e, command: string, handle: string) => {
+    const resolver = containerNamesResolverFor(command)
+    return resolver?.stop(handle) ?? { ok: false, error: 'no resolver' }
+  })
 
   ipcMain.handle(IPC.app.version, () => app.getVersion())
   ipcMain.handle(IPC.settings.get, () => getSettings())
