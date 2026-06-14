@@ -1,3 +1,4 @@
+import '@sentry/electron/preload'
 import { electronAPI } from '@electron-toolkit/preload'
 import { contextBridge, ipcRenderer } from 'electron'
 
@@ -9,6 +10,11 @@ const api = {
     const handler = (): void => cb()
     ipcRenderer.on('popup:shown', handler)
     return () => ipcRenderer.removeListener('popup:shown', handler)
+  },
+  onPortsChanged: (cb: () => void) => {
+    const handler = (): void => cb()
+    ipcRenderer.on('ports:changed', handler)
+    return () => ipcRenderer.removeListener('ports:changed', handler)
   },
   getSettings: () => ipcRenderer.invoke('settings:get'),
   setSettings: (patch: Record<string, unknown>) => ipcRenderer.invoke('settings:set', patch),

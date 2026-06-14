@@ -1,16 +1,8 @@
 import { ColumnDef } from '@tanstack/react-table'
-import { OctagonX, Pin } from 'lucide-react'
-import AppIcon from './components/AppIcon'
+import { Pin } from 'lucide-react'
 import { PortEntry } from 'src/shared/types'
-import { Button } from './components/ui/button'
-
-declare module '@tanstack/react-table' {
-  interface TableMeta<TData> {
-    onInfo: (port: TData) => void
-    onKill: (port: TData) => void
-    onTogglePin: (port: TData) => void
-  }
-}
+import AppIcon from './components/AppIcon'
+import { fmtTimeAgo } from './lib/utils'
 
 export const columns: ColumnDef<PortEntry>[] = [
   {
@@ -46,45 +38,16 @@ export const columns: ColumnDef<PortEntry>[] = [
   {
     accessorKey: 'pid',
     header: 'PID',
-    cell: ({ row }) => (
-      <span className="text-muted-foreground text-[12px]">{row.original.pid}</span>
-    )
+    cell: ({ row }) => <span className="text-muted-foreground text-[12px]">{row.original.pid}</span>
   },
   {
     accessorKey: 'started',
     header: 'Uptime',
     sortUndefined: 'last',
     cell: ({ row }) => (
-      <span className="text-muted-foreground whitespace-nowrap text-[12px]">{ago(row.original.started)}</span>
-    )
-  },
-  {
-    id: 'actions',
-    header: '',
-    enableSorting: false,
-    cell: ({ row, table }) => (
-      <div className="flex justify-end">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="size-7 text-muted-foreground opacity-0 transition-opacity hover:text-destructive focus-visible:opacity-100 group-hover:opacity-100"
-          title="Kill"
-          onClick={() => table.options.meta?.onKill(row.original)}
-        >
-          <OctagonX className="size-4" />
-        </Button>
-      </div>
+      <span className="text-muted-foreground whitespace-nowrap text-[12px]">
+        {fmtTimeAgo(row.original.started)}
+      </span>
     )
   }
 ]
-
-function ago(started: number | null): string {
-  if (!started) return '—'
-  const s = Math.max(0, Math.floor((Date.now() - started) / 1000))
-  if (s < 60) return `${s}s`
-  const m = Math.floor(s / 60)
-  if (m < 60) return `${m}m`
-  const h = Math.floor(m / 60)
-  if (h < 24) return `${h}h`
-  return `${Math.floor(h / 24)}d`
-}

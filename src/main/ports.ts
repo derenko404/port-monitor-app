@@ -72,7 +72,7 @@ async function attachStartTimes(entries: PortEntry[]): Promise<void> {
   for (const e of entries) e.started = startByPid.get(e.pid) ?? null
 }
 
-export const killPort = (_e, pid: number): { ok: boolean; error?: string } => {
+export function killPid(pid: number): { ok: boolean; error?: string } {
   try {
     process.kill(pid, 'SIGTERM')
     return { ok: true }

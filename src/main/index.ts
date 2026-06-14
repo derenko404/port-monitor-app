@@ -1,4 +1,5 @@
 import { is } from '@electron-toolkit/utils'
+import * as Sentry from '@sentry/electron/main'
 import {
   app,
   BrowserWindow,
@@ -7,29 +8,43 @@ import {
   Menu,
   nativeImage,
   nativeTheme,
-  screen,
   shell,
   Tray
 } from 'electron'
 import { join } from 'path'
+import appIcon from '../../build/icon-dock.png?asset'
 import trayIcon from '../../resources/trayTemplate_black.png?asset'
-import { Settings } from '../shared/types'
-import { killPort, listListeningPorts } from './ports'
+import { PortEntry, Settings } from '../shared/types'
+import { killPid, listListeningPorts } from './ports'
 import { applyLoginItem, getSettings, setSettings } from './settings'
 
-let tray: Tray | null = null
-let popup: BrowserWindow | null = null
+// DSN is a public client key (safe to commit) — only allows sending events
+Sentry.init({
+  dsn: 'https://d12a2d70cf46dcb3562085398fea5388@o4511563450220544.ingest.de.sentry.io/4511563458019408',
+  environment: is.dev ? 'development' : 'production',
+  enableLogs: true, // ship console.* as structured logs
+  integrations: [
+    Sentry.consoleLoggingIntegration({ levels: ['log', 'warn', 'error'] }),
+    Sentry.captureConsoleIntegration({ levels: ['error'] }) // console.error → issues
+  ]
+})
 
-function createPopup(): BrowserWindow {
+let tray: Tray | null = null
+let mainWindow: BrowserWindow | null = null
+let isQuitting = false
+
+function createWindow(): BrowserWindow {
   const win = new BrowserWindow({
-    width: 420,
-    height: 400,
+    width: 460,
+    height: 600,
+    minWidth: 380,
+    minHeight: 420,
     show: false,
-    frame: false,
-    resizable: false,
-    skipTaskbar: true,
-    alwaysOnTop: true,
-    // paint the window in the theme bg so there's no white flash before React mounts
+    movable: true,
+    fullscreenable: false,
+    maximizable: false,
+    titleBarStyle: 'hiddenInset',
+    trafficLightPosition: { x: 12, y: 14 },
     backgroundColor: nativeTheme.shouldUseDarkColors ? '#0b0f19' : '#f1f3f8',
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
@@ -37,18 +52,14 @@ function createPopup(): BrowserWindow {
     }
   })
 
-  if (!is.dev) {
-    win.on('blur', () => {
-      if (!win.webContents.isDevToolsOpened()) win.hide()
-    })
-  } else {
-    win.webContents.openDevTools({ mode: 'detach' })
-  }
-
-  // hide on Escape
-  win.webContents.on('before-input-event', (_e, input) => {
-    if (input.type === 'keyDown' && input.key === 'Escape') win.hide()
+  win.on('close', (e) => {
+    if (!isQuitting) {
+      e.preventDefault()
+      win.hide()
+    }
   })
+
+  if (is.dev) win.webContents.openDevTools({ mode: 'detach' })
 
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
     win.loadURL(process.env['ELECTRON_RENDERER_URL'])
@@ -59,33 +70,86 @@ function createPopup(): BrowserWindow {
   return win
 }
 
-function positionPopup(win: BrowserWindow, b: Electron.Rectangle): void {
-  const { width, height } = win.getBounds()
-  const wa = screen.getDisplayNearestPoint({ x: b.x, y: b.y }).workArea
-
-  let x = Math.round(b.x + b.width / 2 - width / 2)
-  const y = process.platform === 'darwin' ? b.y + b.height + 4 : b.y - height - 4
-
-  x = Math.max(wa.x, Math.min(x, wa.x + wa.width - width))
-  win.setPosition(x, Math.round(y), false)
+function showWindow(): void {
+  if (!mainWindow) mainWindow = createWindow()
+  mainWindow.show()
+  mainWindow.focus()
+  mainWindow.webContents.send('popup:shown')
 }
 
 function toggle(): void {
-  if (!popup) popup = createPopup()
-  if (popup.isVisible()) {
-    popup.hide()
-    return
+  if (mainWindow?.isVisible()) mainWindow.hide()
+  else showWindow()
+}
+
+// tell an open window to re-scan after a port changed from the tray
+function notifyPortsChanged(): void {
+  mainWindow?.webContents.send('ports:changed')
+}
+
+// build the tray menu from the live port list (filtered/sorted like the UI)
+async function buildTrayMenu(): Promise<Menu> {
+  const settings = getSettings()
+  let ports: PortEntry[] = []
+  try {
+    ports = await listListeningPorts()
+  } catch {
+    // ignore — show an empty list rather than failing the menu
   }
-  positionPopup(popup, tray!.getBounds())
-  popup.show()
-  popup.focus()
-  popup.webContents.send('popup:shown')
+
+  const MAX = 15
+  const isPinned = (p: PortEntry): boolean => settings.pinned.includes(p.port)
+  const visible = ports
+    .filter((p) => isPinned(p) || (p.port >= settings.portMin && p.port <= settings.portMax))
+    .sort((a, b) => Number(isPinned(b)) - Number(isPinned(a)) || a.port - b.port)
+
+  const shown = visible.slice(0, MAX)
+  const overflow = visible.length - shown.length
+
+  const portItems: Electron.MenuItemConstructorOptions[] = visible.length
+    ? shown.map((p) => ({
+        label: `${isPinned(p) ? '📌 ' : ''}:${p.port}  —  ${p.command}`,
+        submenu: [
+          { label: `PID ${p.pid}`, enabled: false },
+          { type: 'separator' },
+          {
+            label: '🛑 Kill',
+            click: () => {
+              killPid(p.pid)
+              notifyPortsChanged()
+            }
+          }
+        ]
+      }))
+    : [{ label: 'No listening ports', enabled: false }]
+
+  if (overflow > 0) {
+    portItems.push({ label: `+ ${overflow} more…`, click: toggle })
+  }
+
+  return Menu.buildFromTemplate([
+    { label: 'Open Port Monitor', click: toggle },
+    { type: 'separator' },
+    {
+      label: visible.length ? `Listening ports (${visible.length})` : 'Listening ports',
+      enabled: false
+    },
+    ...portItems,
+    { type: 'separator' },
+    {
+      label: 'Quit Port Monitor',
+      click: () => {
+        isQuitting = true
+        app.quit()
+      }
+    }
+  ])
 }
 
 app.whenReady().then(() => {
   ipcMain.handle('ports:list', () => listListeningPorts())
 
-  ipcMain.handle('ports:kill', killPort)
+  ipcMain.handle('ports:kill', (_e, pid: number) => killPid(pid))
 
   ipcMain.handle('app:version', () => app.getVersion())
   ipcMain.handle('settings:get', () => getSettings())
@@ -94,8 +158,6 @@ app.whenReady().then(() => {
 
   // reflect persisted login-item pref on launch
   applyLoginItem(getSettings())
-
-  if (process.platform === 'darwin') app.dock?.hide()
 
   // 22px @1x + 44px @2x reps used natively — no downscale, stays crisp
   const img = nativeImage.createFromPath(trayIcon)
@@ -107,22 +169,31 @@ app.whenReady().then(() => {
   tray.setToolTip('Port Monitor')
   tray.on('click', toggle)
 
-  // right-click → context menu with Quit
-  tray.on('right-click', () => {
-    tray!.popUpContextMenu(
-      Menu.buildFromTemplate([
-        { label: 'Open', click: toggle },
-        { type: 'separator' },
-        { label: 'Quit Port Monitor', click: () => app.quit() }
-      ])
-    )
+  // right-click → live port list + actions
+  tray.on('right-click', async () => {
+    tray!.popUpContextMenu(await buildTrayMenu())
   })
+
+  app.dock?.setIcon(nativeImage.createFromPath(appIcon))
 
   globalShortcut.register('CommandOrControl+Shift+9', toggle)
   app.on('will-quit', () => globalShortcut.unregisterAll())
 
   // pre-create the popup hidden so it's already rendered before the first open (no white flash)
-  popup = createPopup()
+  mainWindow = createWindow()
+  showWindow()
+
+  app.on('activate', showWindow)
+  app.on('before-quit', () => {
+    isQuitting = true
+  })
+
+  app.on('window-all-closed', () => {
+    // intentionally empty: app lives in the tray
+  })
 })
 
-ipcMain.on('app:quit', () => app.quit())
+ipcMain.on('app:quit', () => {
+  isQuitting = true
+  app.quit()
+})

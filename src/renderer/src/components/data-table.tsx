@@ -7,35 +7,10 @@ import {
   SortingState,
   useReactTable
 } from '@tanstack/react-table'
-import { Check, ChevronDown, ChevronUp, Copy, Globe, Info, Loader2, Pin, PinOff } from 'lucide-react'
-import { useState } from 'react'
+import { ChevronDown, ChevronRight, ChevronUp, Loader2 } from 'lucide-react'
+import { Fragment, useEffect, useRef, useState } from 'react'
 import { cn } from '../lib/utils'
-import {
-  ContextMenu,
-  ContextMenuContent,
-  ContextMenuItem,
-  ContextMenuSeparator,
-  ContextMenuTrigger
-} from './ui/context-menu'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table'
-
-function CopyKillItem({ onCopy }: { onCopy: () => void }): React.JSX.Element {
-  const [copied, setCopied] = useState(false)
-  return (
-    <ContextMenuItem
-      className="py-1 text-sm"
-      onSelect={(e) => {
-        e.preventDefault() // keep menu open to show feedback
-        onCopy()
-        setCopied(true)
-        setTimeout(() => setCopied(false), 1200)
-      }}
-    >
-      {copied ? <Check className="size-4" /> : <Copy className="size-4" />}
-      {copied ? 'Copied!' : 'Copy kill command'}
-    </ContextMenuItem>
-  )
-}
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
@@ -44,10 +19,12 @@ interface DataTableProps<TData, TValue> {
   loading?: boolean
   onInfo: (row: TData) => void
   onKill: (row: TData) => void
-  onCopyKill: (row: TData) => void
-  onOpenExternal: (row: TData) => void
-  onTogglePin: (row: TData) => void
   isPinned: (row: TData) => boolean
+  rowKey: (row: TData) => string
+  selectedKey: string | null
+  onSelect: (row: TData | null) => void
+  // rendered in an inserted row directly below the selected row
+  renderExpanded?: (row: TData) => React.ReactNode
 }
 
 export function DataTable<TData, TValue>({
@@ -57,19 +34,20 @@ export function DataTable<TData, TValue>({
   loading,
   onInfo,
   onKill,
-  onCopyKill,
-  onOpenExternal,
-  onTogglePin,
-  isPinned
+  isPinned,
+  rowKey,
+  selectedKey,
+  onSelect,
+  renderExpanded
 }: DataTableProps<TData, TValue>): React.JSX.Element {
   const [sorting, setSorting] = useState<SortingState>([{ id: 'started', desc: true }])
+  const selectedRef = useRef<HTMLTableRowElement>(null)
 
   const table = useReactTable({
     data,
     columns,
     state: { sorting, globalFilter: filter },
     onSortingChange: setSorting,
-    meta: { onInfo, onKill, onTogglePin },
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel()
@@ -80,11 +58,56 @@ export function DataTable<TData, TValue>({
     (a, b) => Number(isPinned(b.original)) - Number(isPinned(a.original))
   )
 
+  const select = onSelect
+
+  // clear selection if the selected row left the list (killed, filtered out)
+  const visibleKeys = rows.map((r) => rowKey(r.original)).join('|')
+  useEffect(() => {
+    if (selectedKey && !visibleKeys.split('|').includes(selectedKey)) select(null)
+  }, [visibleKeys, selectedKey, select])
+
+  // keep selected row in view when moved by keyboard
+  useEffect(() => {
+    selectedRef.current?.scrollIntoView({ block: 'nearest' })
+  }, [selectedKey])
+
+  // keyboard navigation: ↑↓ move, ⏎ info, ⌘⌫ kill, esc clear
+  useEffect(() => {
+    function onKey(e: KeyboardEvent): void {
+      if (!rows.length) return
+      const idx = rows.findIndex((r) => rowKey(r.original) === selectedKey)
+      if (e.key === 'ArrowDown') {
+        e.preventDefault()
+        select((rows[Math.min(idx + 1, rows.length - 1)] ?? rows[0]).original)
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault()
+        select((idx <= 0 ? rows[0] : rows[idx - 1]).original)
+      } else if (e.key === 'Escape') {
+        if (selectedKey) {
+          e.preventDefault()
+          select(null)
+        }
+      } else if (idx >= 0) {
+        const sel = rows[idx].original
+        if (e.key === 'Enter') {
+          e.preventDefault()
+          onInfo(sel)
+        } else if ((e.metaKey || e.ctrlKey) && (e.key === 'Backspace' || e.key === 'Delete')) {
+          e.preventDefault()
+          onKill(sel)
+        }
+      }
+    }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [rows, selectedKey, select, onInfo, onKill, rowKey])
+
   return (
     <Table>
       <TableHeader>
         {table.getHeaderGroups().map((hg) => (
           <TableRow key={hg.id} className="border-0 hover:bg-transparent">
+            <TableHead className="sticky top-0 w-6 bg-card" />
             {hg.headers.map((h) => {
               const sorted = h.column.getIsSorted()
               const sortable = h.column.getCanSort()
@@ -112,7 +135,7 @@ export function DataTable<TData, TValue>({
       <TableBody>
         {loading ? (
           <TableRow className="border-0 hover:bg-transparent">
-            <TableCell colSpan={columns.length} className="py-10">
+            <TableCell colSpan={columns.length + 1} className="py-10">
               <div className="flex flex-col items-center gap-2 text-muted-foreground">
                 <Loader2 className="size-5 animate-spin" />
                 <span className="text-xs">Scanning ports…</span>
@@ -120,46 +143,49 @@ export function DataTable<TData, TValue>({
             </TableCell>
           </TableRow>
         ) : rows.length ? (
-          rows.map((row) => (
-            <ContextMenu key={row.id}>
-              <ContextMenuTrigger asChild>
-                <TableRow className="group border-b border-border/40 hover:bg-muted/50">
+          rows.map((row) => {
+            const selected = rowKey(row.original) === selectedKey
+            return (
+              <Fragment key={row.id}>
+                <TableRow
+                  ref={selected ? selectedRef : undefined}
+                  onClick={() => select(selected ? null : row.original)}
+                  data-selected={selected || undefined}
+                  className={cn(
+                    'group cursor-pointer border-b border-border/40 hover:bg-muted/50',
+                    selected && 'border-transparent bg-sky-500/10 hover:bg-sky-500/10'
+                  )}
+                >
+                  <TableCell className="w-6 pl-2 pr-0">
+                    <ChevronRight
+                      className={cn(
+                        'size-3.5 text-muted-foreground/50 transition-transform',
+                        selected && 'rotate-90 text-sky-600 dark:text-sky-400'
+                      )}
+                    />
+                  </TableCell>
                   {row.getVisibleCells().map((c) => (
                     <TableCell key={c.id} className="py-2 px-3">
                       {flexRender(c.column.columnDef.cell, c.getContext())}
                     </TableCell>
                   ))}
                 </TableRow>
-              </ContextMenuTrigger>
-              <ContextMenuContent className="w-44">
-                <ContextMenuItem className="py-1 text-sm" onSelect={() => onInfo(row.original)}>
-                  <Info className="size-4" />
-                  Info
-                </ContextMenuItem>
-                <ContextMenuSeparator />
-                <ContextMenuItem onSelect={() => onOpenExternal(row.original)}>
-                  <Globe className="size-4" /> Open in browser
-                </ContextMenuItem>
-                <ContextMenuSeparator />
-                <CopyKillItem onCopy={() => onCopyKill(row.original)} />
-                <ContextMenuSeparator />
-                <ContextMenuItem className="py-1 text-sm" onSelect={() => onTogglePin(row.original)}>
-                  {isPinned(row.original) ? (
-                    <>
-                      <PinOff className="size-4" /> Unpin
-                    </>
-                  ) : (
-                    <>
-                      <Pin className="size-4" /> Pin
-                    </>
-                  )}
-                </ContextMenuItem>
-              </ContextMenuContent>
-            </ContextMenu>
-          ))
+                {selected && renderExpanded && (
+                  <TableRow className="border-0 hover:bg-transparent">
+                    <TableCell colSpan={columns.length + 1} className="p-0">
+                      {renderExpanded(row.original)}
+                    </TableCell>
+                  </TableRow>
+                )}
+              </Fragment>
+            )
+          })
         ) : (
           <TableRow>
-            <TableCell colSpan={columns.length} className="text-center text-muted-foreground py-4">
+            <TableCell
+              colSpan={columns.length + 1}
+              className="text-center text-muted-foreground py-4"
+            >
               No ports
             </TableCell>
           </TableRow>

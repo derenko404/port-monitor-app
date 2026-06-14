@@ -1,15 +1,14 @@
 import { useSettings } from '@renderer/hooks/use-settings'
 import { cn, sleep } from '@renderer/lib/utils'
-import { RefreshCw, Search, Settings as SettingsIcon, X } from 'lucide-react'
 import { useAtom } from 'jotai'
+import { RefreshCw, Search, Settings as SettingsIcon, X } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { PortEntry } from 'src/shared/types'
-import { portsAtom, portsLoadedAtom } from '../store/ports'
-import ethernetMask from '../assets/ethernet-mask.png'
 import { columns } from '../columns'
 import AppIcon from '../components/AppIcon'
 import { DataTable } from '../components/data-table'
+import { PortActionBar } from '../components/PortActionBar'
 import PortInfoDialog from '../components/PortInfoDialog'
 import {
   AlertDialog,
@@ -23,6 +22,7 @@ import {
 } from '../components/ui/alert-dialog'
 import { Button, buttonVariants } from '../components/ui/button'
 import { Input } from '../components/ui/input'
+import { portsAtom, portsLoadedAtom } from '../store/ports'
 
 function Ports(): React.JSX.Element {
   const nav = useNavigate()
@@ -33,6 +33,7 @@ function Ports(): React.JSX.Element {
   const [spinning, setSpinning] = useState(false)
   const [infoPort, setInfoPort] = useState<PortEntry | null>(null)
   const [killTarget, setKillTarget] = useState<PortEntry | null>(null)
+  const [selected, setSelected] = useState<PortEntry | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const { settings, updateSettings } = useSettings()
 
@@ -89,6 +90,9 @@ function Ports(): React.JSX.Element {
     })
   }, [refresh, nav])
 
+  // re-scan when a port is killed from the tray menu
+  useEffect(() => window.api.onPortsChanged(refresh), [refresh])
+
   // auto-refresh polling
   useEffect(() => {
     if (!settings.polling) return undefined
@@ -98,21 +102,8 @@ function Ports(): React.JSX.Element {
 
   return (
     <div className="relative flex flex-col h-screen bg-background text-foreground">
-      <header className="flex items-center gap-2 p-2 border-b">
-        <span
-          className="ml-1 size-4 shrink-0 bg-foreground"
-          style={{
-            maskImage: `url(${ethernetMask})`,
-            WebkitMaskImage: `url(${ethernetMask})`,
-            maskSize: 'contain',
-            WebkitMaskSize: 'contain',
-            maskRepeat: 'no-repeat',
-            WebkitMaskRepeat: 'no-repeat',
-            maskPosition: 'center',
-            WebkitMaskPosition: 'center'
-          }}
-        />
-        <h1 className="flex flex-1 items-center gap-2 text-sm font-semibold">
+      <header className="relative flex items-center gap-2 border-b p-2 pl-[76px] [-webkit-app-region:drag]">
+        <h1 className="absolute left-1/2 flex -translate-x-1/2 items-center gap-2 text-sm font-semibold">
           Ports
           {loaded && (
             <span className="rounded-full bg-sky-500/10 px-1.5 py-0.5 text-[11px] font-medium text-sky-600 tabular-nums dark:text-sky-400">
@@ -120,18 +111,26 @@ function Ports(): React.JSX.Element {
             </span>
           )}
         </h1>
-        <Button variant="ghost" size="icon" className="size-7" title="Refresh" onClick={refresh}>
-          <RefreshCw className={`size-4 ${spinning ? 'animate-spin' : ''}`} />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="size-7"
-          title="Settings"
-          onClick={() => nav('/settings')}
-        >
-          <SettingsIcon className="size-4" />
-        </Button>
+        <div className="ml-auto flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-7 [-webkit-app-region:no-drag]"
+            title="Refresh"
+            onClick={refresh}
+          >
+            <RefreshCw className={`size-4 ${spinning ? 'animate-spin' : ''}`} />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-7 [-webkit-app-region:no-drag]"
+            title="Settings"
+            onClick={() => nav('/settings')}
+          >
+            <SettingsIcon className="size-4" />
+          </Button>
+        </div>
       </header>
 
       <div className="min-h-0 flex-1 p-2.5">
@@ -143,12 +142,21 @@ function Ports(): React.JSX.Element {
             loading={!loaded}
             onInfo={setInfoPort}
             onKill={setKillTarget}
-            onOpenExternal={(p) => {
-              window.api.openExternal(`http://localhost:${p.port}`)
-            }}
-            onCopyKill={(p) => navigator.clipboard.writeText(`kill -9 ${p.pid}`)}
-            onTogglePin={togglePin}
             isPinned={(p) => !!p.pinned}
+            rowKey={(p) => String(p.port)}
+            selectedKey={selected ? String(selected.port) : null}
+            onSelect={setSelected}
+            renderExpanded={(p) => (
+              <PortActionBar
+                port={p}
+                pinned={settings.pinned.includes(p.port)}
+                onInfo={setInfoPort}
+                onOpenExternal={(x) => window.api.openExternal(`http://localhost:${x.port}`)}
+                onCopyKill={(x) => navigator.clipboard.writeText(`kill -9 ${x.pid}`)}
+                onTogglePin={togglePin}
+                onKill={setKillTarget}
+              />
+            )}
           />
         </div>
       </div>

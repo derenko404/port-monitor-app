@@ -1,4 +1,4 @@
-import { ArrowLeft } from 'lucide-react'
+import { Home } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { PORT_MAX, PORT_MIN, Theme } from 'src/shared/types'
@@ -77,11 +77,17 @@ function Settings(): React.JSX.Element {
 
   return (
     <div className="flex flex-col h-screen bg-background text-foreground">
-      <header className="flex items-center gap-2 p-2 border-b">
-        <Button variant="ghost" size="icon" className="size-7" onClick={() => nav(-1)}>
-          <ArrowLeft className="size-4" />
+      <header className="relative flex items-center gap-2 border-b p-2 pl-[76px] [-webkit-app-region:drag]">
+        <h1 className="absolute left-1/2 -translate-x-1/2 text-sm font-semibold">Settings</h1>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="ml-auto size-7 [-webkit-app-region:no-drag]"
+          title="Home"
+          onClick={() => nav(-1)}
+        >
+          <Home className="size-4" />
         </Button>
-        <h1 className="text-sm font-semibold">Settings</h1>
       </header>
 
       <div className="flex-1 space-y-4 overflow-auto p-3">

@@ -1,5 +1,7 @@
 # Port Monitor — TODO
 
+- [x] **Add sentry monitoring** - For errors and warnings
+
 Feature ideas, grouped by value.
 
 ## High value (core utility)

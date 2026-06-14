@@ -8,6 +8,7 @@ declare global {
       listPorts: () => Promise<PortEntry[]>
       killPort: (pid: number) => Promise<{ ok: boolean; error?: string }>
       onShown: (cb: () => void) => () => void
+      onPortsChanged: (cb: () => void) => () => void
       getSettings: () => Promise<Settings>
       setSettings: (patch: Partial<Settings>) => Promise<Settings>
       quit: () => void
