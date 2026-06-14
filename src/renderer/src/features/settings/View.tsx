@@ -163,17 +163,6 @@ function Settings(): React.JSX.Element {
 
         <Section title={t('settings.sections.system')}>
           <SettingRow
-            label={t('settings.startOnLogin.label')}
-            desc={t('settings.startOnLogin.desc')}
-            htmlFor="startOnLogin"
-          >
-            <Switch
-              id="startOnLogin"
-              checked={settings.startOnLogin}
-              onCheckedChange={(v) => updateSettings({ startOnLogin: v })}
-            />
-          </SettingRow>
-          <SettingRow
             label={t('settings.analytics.label')}
             desc={t('settings.analytics.desc')}
             htmlFor="analytics"
