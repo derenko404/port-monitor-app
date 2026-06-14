@@ -1,5 +1,7 @@
 # Changelog
 
+## [1.2.1](https://github.com/derenko404/port-monitor-app/compare/v1.2.0...v1.2.1) (2026-06-14)
+
 ## [1.2.0](https://github.com/derenko404/port-monitor-app/compare/v1.1.3...v1.2.0) (2026-06-14)
 
 ### Features
