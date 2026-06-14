@@ -36,3 +36,42 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+
+  # Bump version + both sha256 in the Homebrew cask, push to the tap repo.
+  # Needs TAP_GITHUB_TOKEN: a PAT with contents:write on derenko404/homebrew-tap
+  # (the default GITHUB_TOKEN can't push to another repo).
+  update-cask:
+    needs: release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout tap
+        uses: actions/checkout@v4
+        with:
+          repository: derenko404/homebrew-tap
+          token: ${{ secrets.TAP_GITHUB_TOKEN }}
+
+      - name: Update cask
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          VERSION="${TAG#v}"
+          BASE="https://github.com/derenko404/port-monitor-app/releases/download/${TAG}"
+          ARM_SHA=$(curl -fsSL "$BASE/port-monitor-${VERSION}-arm64.dmg" | sha256sum | awk '{print $1}')
+          X64_SHA=$(curl -fsSL "$BASE/port-monitor-${VERSION}-x64.dmg"   | sha256sum | awk '{print $1}')
+
+          CASK=Casks/port-monitor.rb
+          sed -i "s/^  version \".*\"/  version \"${VERSION}\"/" "$CASK"
+          # first sha256 = on_arm, second = on_intel
+          awk -v arm="$ARM_SHA" -v x64="$X64_SHA" '
+            /sha256 "/ { n++;
+              if (n==1) sub(/sha256 "[^"]*"/, "sha256 \"" arm "\"");
+              else if (n==2) sub(/sha256 "[^"]*"/, "sha256 \"" x64 "\"") }
+            { print }
+          ' "$CASK" > "$CASK.tmp" && mv "$CASK.tmp" "$CASK"
+
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add "$CASK"
+          git commit -m "Update port-monitor cask to ${VERSION}" || { echo "no changes"; exit 0; }
+          git push

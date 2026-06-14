@@ -26,6 +26,7 @@ No more `lsof -i :3000` then `kill -9`. Open the tray, find the port, done.
 
 ```bash
 brew tap derenko404/tap
+brew trust derenko404/tap   # one-time: trust a third-party tap
 brew install --cask port-monitor
 ```
 

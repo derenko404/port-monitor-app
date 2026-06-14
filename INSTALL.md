@@ -11,12 +11,12 @@ because it wasn't checked by Apple. You bypass it once with **right-click → Op
 From [Releases](https://github.com/derenko404/port-monitor-app/releases), grab the
 `.dmg` matching your Mac:
 
-| Mac | File |
-|-----|------|
+| Mac                         | File                               |
+| --------------------------- | ---------------------------------- |
 | Apple Silicon (M1/M2/M3/M4) | `port-monitor-<version>-arm64.dmg` |
-| Intel | `port-monitor-<version>-x64.dmg` |
+| Intel                       | `port-monitor-<version>-x64.dmg`   |
 
-Not sure?  → Apple menu →  About This Mac → "Chip" says Apple, or "Processor" says Intel.
+Not sure? → Apple menu → About This Mac → "Chip" says Apple, or "Processor" says Intel.
 
 ---
 
@@ -24,8 +24,8 @@ Not sure?  → Apple menu →  About This Mac → "Chip" says Apple, or "Process
 
 1. Open the `.dmg` and drag **Port Monitor** into **Applications**.
 2. Launch it. The app is **ad-hoc signed** (not notarized — no paid Apple cert), so
-   the first launch shows: *"Port Monitor can't be opened because Apple cannot check
-   it for malicious software."* Expected.
+   the first launch shows: _"Port Monitor can't be opened because Apple cannot check
+   it for malicious software."_ Expected.
 3. Bypass it **once**:
 
    **Option A — right-click open** (easiest)
@@ -42,7 +42,7 @@ right), not the Dock.
 
 ### "Port Monitor is damaged and can't be opened" (rare)
 
-If you ever see *"…is damaged and can't be opened"* — usually from an **older,
+If you ever see _"…is damaged and can't be opened"_ — usually from an **older,
 unsigned build** or an unusual download path — that's the quarantine flag, and
 right-click → Open won't clear it. Remove it from Terminal, then open normally:
 
@@ -60,14 +60,15 @@ hit this — right-click → Open is enough.
 
 ```bash
 brew tap derenko404/tap
+brew trust derenko404/tap   # one-time: Homebrew refuses to load casks from an untrusted tap
 brew install --cask port-monitor
 ```
 
-Because the app is unsigned, Homebrew may also quarantine it. If the first launch
-is blocked, use one of the bypass steps above, or install with:
+Because the app is unsigned, Homebrew quarantines it. If the first launch is
+blocked, use one of the bypass steps above, or clear quarantine after install:
 
 ```bash
-brew install --cask --no-quarantine port-monitor
+xattr -dr com.apple.quarantine "/Applications/Port Monitor.app"
 ```
 
 Update:
