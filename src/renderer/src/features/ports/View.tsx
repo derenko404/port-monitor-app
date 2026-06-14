@@ -1,16 +1,17 @@
 import { api } from '@renderer/features/shared/lib/api'
+import { debounce } from '@renderer/features/shared/lib/utils'
 import { Button } from '@ui/button'
 import { RefreshCw, Settings as SettingsIcon } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
-import { debounce } from '@renderer/features/shared/lib/utils'
 import { killCommand, localhostUrl } from 'src/shared/ports'
 import { PortEntry, PortGroup } from 'src/shared/types'
 import { AppHeader } from '../shared/components/AppHeader'
 import { useColumns } from './columns'
 import { ForceKillPortDialog } from './components/ForceKillPortDialog'
 import { KillPortDialog } from './components/KillPortDialog'
+import { ParentKillBar } from './components/ParentKillBar'
 import { PortActionBar } from './components/PortActionBar'
 import PortInfoDialog from './components/PortInfoDialog'
 import { PortsError } from './components/PortsError'
@@ -130,6 +131,13 @@ function Ports(): React.JSX.Element {
               onSelect={setSelected}
               renderExpanded={(g) => (
                 <div className="flex flex-col">
+                  {g.ports.length > 1 && (
+                    <ParentKillBar
+                      command={g.command}
+                      // whole-process kill: no single port (port 0 → dialog hides the pill)
+                      onKill={() => askKill({ ...g.ports[0], command: g.command, port: 0 })}
+                    />
+                  )}
                   {g.ports.map((p) => (
                     <PortActionBar
                       key={p.port}

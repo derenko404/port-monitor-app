@@ -15,6 +15,7 @@
     "empty": "No ports",
     "count_one": "{{count}} port",
     "count_other": "{{count}} ports",
+    "parentBadge": "parent",
     "error": {
       "permissionTitle": "Can't read ports",
       "permissionDesc": "Port Monitor needs permission to list listening ports. Grant it access in System Settings → Privacy & Security, then retry.",
@@ -34,7 +35,10 @@
       "copyKill": "Copy kill command",
       "pin": "Pin",
       "unpin": "Unpin",
-      "kill": "Kill process (⌘⌫)"
+      "kill": "Kill process (⌘⌫)",
+      "killContainer": "Can't kill — this would stop the parent container service, not this container",
+      "killGrouped": "Can't kill one port — they share a process. Use the Kill above to stop it",
+      "killParent": "Kill the process and all its children"
     },
     "info": {
       "protocol": "Protocol",

@@ -34,7 +34,7 @@ export function KillPortDialog({
   const { t } = useTranslation()
   return (
     <AlertDialog open={!!target} onOpenChange={(o) => !o && !busy && onCancel()}>
-      <AlertDialogContent className="max-w-75 gap-0 p-5">
+      <AlertDialogContent size="sm" className="gap-0 p-5">
         <button
           onClick={onCancel}
           disabled={busy}
@@ -51,7 +51,10 @@ export function KillPortDialog({
             <AlertDialogTitle className="text-sm">{t('dialogs.kill.title')}</AlertDialogTitle>
             <div className="flex items-center gap-2 text-xs">
               <span className="font-medium text-foreground">{target?.command}</span>
-              {target && <PortPill port={target.port} className="text-[11px] font-medium" />}
+              {/* port omitted for whole-process (parent) kills — it'd be misleading */}
+              {target?.port ? (
+                <PortPill port={target.port} className="text-[11px] font-medium" />
+              ) : null}
             </div>
           </div>
           <AlertDialogDescription className="text-xs leading-relaxed">

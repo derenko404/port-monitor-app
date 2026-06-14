@@ -1,6 +1,6 @@
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@ui/dialog'
 import { useTranslation } from 'react-i18next'
 import { PortEntry } from 'src/shared/types'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@ui/dialog'
 import AppIcon from './AppIcon'
 import { PortPill } from './PortPill'
 
@@ -22,7 +22,7 @@ function PortInfoDialog({ port: p, onClose }: PortInfoDialogProps): React.JSX.El
   const { t } = useTranslation()
   return (
     <Dialog open={!!p} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-75 gap-0 p-5">
+      <DialogContent className="max-w-80 gap-0 p-5 sm:max-w-80">
         <DialogHeader className="items-center gap-3 text-center">
           <span className="grid size-11 place-items-center rounded-xl bg-muted ring-1 ring-border">
             <AppIcon command={p?.command ?? ''} className="size-5" />

@@ -55,19 +55,22 @@ export function PortActionBar({
         >
           <Globe className="size-4" />
         </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="size-7 text-muted-foreground hover:text-foreground"
-          title={t('ports.actions.copyKill')}
-          onClick={() => {
-            onCopyKill(port)
-            setCopied(true)
-            setTimeout(() => setCopied(false), 1200)
-          }}
-        >
-          {copied ? <Check className="size-4 text-emerald-500" /> : <Copy className="size-4" />}
-        </Button>
+        {/* `kill -9 pid` targets the shared process, not one port — hide for groups */}
+        {!showPort && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-7 text-muted-foreground hover:text-foreground"
+            title={t('ports.actions.copyKill')}
+            onClick={() => {
+              onCopyKill(port)
+              setCopied(true)
+              setTimeout(() => setCopied(false), 1200)
+            }}
+          >
+            {copied ? <Check className="size-4 text-emerald-500" /> : <Copy className="size-4" />}
+          </Button>
+        )}
         <Button
           variant="ghost"
           size="icon"
@@ -84,18 +87,26 @@ export function PortActionBar({
 
       {!showPort && <div className="flex-1" />}
 
-      {/* destructive action, separated */}
       <div className="mx-0.5 h-5 w-px bg-border" />
-      <Button
-        variant="outline"
-        size="sm"
-        className="h-7 gap-1.5 border-destructive/30 px-8 text-destructive hover:border-destructive/50 hover:bg-destructive/10 hover:text-destructive"
-        title={t('ports.actions.kill')}
-        onClick={() => onKill(port)}
+      <span
+        title={
+          showPort
+            ? t(label ? 'ports.actions.killContainer' : 'ports.actions.killGrouped')
+            : undefined
+        }
       >
-        <OctagonX className="size-4" />
-        {t('common.kill')}
-      </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={showPort}
+          className="h-7 gap-1.5 border-destructive/30 px-8 text-destructive hover:border-destructive/50 hover:bg-destructive/10 hover:text-destructive"
+          title={showPort ? undefined : t('ports.actions.kill')}
+          onClick={() => onKill(port)}
+        >
+          <OctagonX className="size-4" />
+          {t('common.kill')}
+        </Button>
+      </span>
     </div>
   )
 }

@@ -32,7 +32,7 @@ export function ForceKillPortDialog({
   const { t } = useTranslation()
   return (
     <AlertDialog open={!!target} onOpenChange={(o) => !o && !busy && onCancel()}>
-      <AlertDialogContent className="max-w-[300px] gap-0 p-5">
+      <AlertDialogContent size="sm" className="gap-0 p-5">
         <button
           onClick={onCancel}
           disabled={busy}
