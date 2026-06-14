@@ -4,8 +4,11 @@ A tiny macOS menubar app to see what's listening on your ports — and kill it i
 
 No more `lsof -i :3000` then `kill -9`. Open the tray, find the port, done.
 
-<!-- Add a screenshot here: docs/screenshot.png -->
-<!-- ![Port Monitor](docs/screenshot.png) -->
+<p align="center">
+  <img src="docs/ports.png" alt="Port list" width="320" />
+  <img src="docs/context-menu.png" alt="Right-click actions" width="320" />
+  <img src="docs/settings.png" alt="Settings" width="320" />
+</p>
 
 ## Features
 
