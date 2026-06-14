@@ -16,7 +16,7 @@ export function ParentKillBar({
 }: ParentKillBarProps): React.JSX.Element {
   const { t } = useTranslation()
   return (
-    <div className="mx-8 mb-2 flex items-center gap-2 rounded-lg border border-border/40 bg-muted/40 px-3 py-1.5 text-foreground">
+    <div className="mx-8 mb-2 flex items-center gap-2 rounded-b-lg border-x border-b border-border/40 bg-muted/40 px-3 py-1.5 text-foreground">
       <span className="flex min-w-0 flex-1 items-center gap-1.5" title={command}>
         <span className="inline-flex shrink-0 items-center rounded-md bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-400">
           {t(containerService ? 'ports.engineBadge' : 'ports.parentBadge')}

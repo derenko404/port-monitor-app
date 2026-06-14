@@ -6,8 +6,9 @@ import { PortActions } from './PortActions'
 import { PortRowLabel } from './PortRowLabel'
 
 interface ContainerPortRowProps {
-  port: ContainerPort // command = container name, container.id = stop handle
+  port: ContainerPort
   pinned: boolean
+  rounded?: boolean
   label?: string
   onInfo: (p: PortEntry) => void
   onOpenExternal: (p: PortEntry) => void
@@ -20,6 +21,7 @@ interface ContainerPortRowProps {
 export function ContainerPortRow({
   port,
   pinned,
+  rounded,
   label,
   onInfo,
   onOpenExternal,
@@ -27,8 +29,11 @@ export function ContainerPortRow({
   onStop
 }: ContainerPortRowProps): React.JSX.Element {
   const { t } = useTranslation()
+  const border = rounded ? 'mt-1 rounded-lg border' : 'rounded-b-lg border-x border-b'
   return (
-    <div className="mx-8 mb-2 flex items-center gap-2 rounded-b-lg border-x border-b border-border/40 bg-muted/40 px-3 py-1.5 text-foreground">
+    <div
+      className={`mx-8 mb-2 flex items-center gap-2 ${border} border-border/40 bg-muted/40 px-3 py-1.5 text-foreground`}
+    >
       <PortRowLabel port={port.port} label={label} />
 
       <PortActions

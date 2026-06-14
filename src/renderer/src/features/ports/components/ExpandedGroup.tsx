@@ -48,6 +48,7 @@ export function ExpandedGroup({
             key={p.port}
             port={p}
             pinned={!!p.pinned}
+            rounded={grouped}
             label={p.command !== group.command ? p.command : undefined}
             onInfo={onInfo}
             onOpenExternal={openExternal}
@@ -60,6 +61,7 @@ export function ExpandedGroup({
             port={p}
             pinned={!!p.pinned}
             grouped={grouped}
+            rounded={grouped}
             label={p.command !== group.command ? p.command : undefined}
             onInfo={onInfo}
             onOpenExternal={openExternal}

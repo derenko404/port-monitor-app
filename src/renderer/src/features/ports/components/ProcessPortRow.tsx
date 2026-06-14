@@ -9,6 +9,7 @@ interface ProcessPortRowProps {
   port: PortEntry
   pinned: boolean
   grouped: boolean // this pid owns multiple ports — killing one kills them all
+  rounded?: boolean
   label?: string
   onInfo: (p: PortEntry) => void
   onOpenExternal: (p: PortEntry) => void
@@ -23,6 +24,7 @@ export function ProcessPortRow({
   port,
   pinned,
   grouped,
+  rounded,
   label,
   onInfo,
   onOpenExternal,
@@ -31,8 +33,11 @@ export function ProcessPortRow({
   onKill
 }: ProcessPortRowProps): React.JSX.Element {
   const { t } = useTranslation()
+  const border = rounded ? 'mt-1 rounded-lg border' : 'rounded-b-lg border-x border-b'
   return (
-    <div className="mx-8 mb-2 flex items-center gap-2 rounded-b-lg border-x border-b border-border/40 bg-muted/40 px-3 py-1.5 text-foreground">
+    <div
+      className={`mx-8 mb-2 flex items-center gap-2 ${border} border-border/40 bg-muted/40 px-3 py-1.5 text-foreground`}
+    >
       {grouped && <PortRowLabel port={port.port} label={label} />}
 
       <PortActions
