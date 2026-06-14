@@ -42,6 +42,12 @@ function Ports(): React.JSX.Element {
   const [selected, setSelected] = useState<PortEntry | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
+  // track a search once per session (when the box goes from empty to non-empty)
+  const onSearch = (value: string): void => {
+    if (!q && value) api.track('search')
+    setQ(value)
+  }
+
   // on tray reopen: go to ports, refresh, focus + select search
   useEffect(() => {
     return api.onShown(() => {
@@ -110,7 +116,10 @@ function Ports(): React.JSX.Element {
                   port={p}
                   pinned={!!p.pinned}
                   onInfo={setInfoPort}
-                  onOpenExternal={(x) => api.openExternal(localhostUrl(x.port))}
+                  onOpenExternal={(x) => {
+                    api.track('open_browser', { source: 'app' })
+                    api.openExternal(localhostUrl(x.port))
+                  }}
                   onCopyKill={(x) => navigator.clipboard.writeText(killCommand(x.pid))}
                   onTogglePin={togglePin}
                   onKill={askKill}
@@ -121,7 +130,7 @@ function Ports(): React.JSX.Element {
         </div>
       </div>
 
-      {!error && <PortsSearch ref={inputRef} value={q} onChange={setQ} />}
+      {!error && <PortsSearch ref={inputRef} value={q} onChange={onSearch} />}
 
       <PortInfoDialog port={infoPort} onClose={() => setInfoPort(null)} />
 

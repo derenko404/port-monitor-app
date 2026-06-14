@@ -40,10 +40,12 @@ export function usePortOperations(): UsePortOperations {
 
   const togglePin = useCallback(
     (p: PortEntry) => {
-      const pinned = settings.pinned.includes(p.port)
+      const isPinned = settings.pinned.includes(p.port)
+      const pinned = isPinned
         ? settings.pinned.filter((x) => x !== p.port)
         : [...settings.pinned, p.port]
       updateSettings({ pinned })
+      api.track('pin', { pinned: !isPinned, port: p.port })
     },
     [settings.pinned, updateSettings]
   )
@@ -52,6 +54,7 @@ export function usePortOperations(): UsePortOperations {
     if (!killTarget || busy) return
     const t = killTarget
     setBusy(true)
+    api.track('kill', { source: 'app', signal: settings.killSignal })
     const res = await api.killPort(t.pid, settings.killSignal)
     if (!res.ok) console.error('kill failed:', res.error)
     // poll until it exits; if it ignored the signal, offer to force (unless already SIGKILL)

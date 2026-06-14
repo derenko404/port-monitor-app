@@ -1,7 +1,7 @@
+import { settingsAtom, settingsLoadedAtom } from '@renderer/store/settings'
 import { useAtom } from 'jotai'
 import { useCallback, useEffect } from 'react'
 import { Settings as SettingsType } from 'src/shared/types'
-import { settingsAtom, settingsLoadedAtom } from '@renderer/store/settings'
 import { api } from '../lib/api'
 
 type UseSettings = {
@@ -26,6 +26,8 @@ export const useSettings = (): UseSettings => {
     async (patch: Partial<SettingsType>) => {
       const next = await api.setSettings(patch)
       setSettings(next)
+      const keys = Object.keys(patch).filter((k) => k !== 'pinned')
+      if (keys.length) api.track('settings', { keys: keys.join(',') })
     },
     [setSettings]
   )

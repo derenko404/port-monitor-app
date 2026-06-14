@@ -13,6 +13,7 @@ import { settingsAtom, settingsLoadedAtom } from './store/settings'
 
 if (import.meta.env.PROD) {
   Sentry.init({
+    dsn: import.meta.env.RENDERER_VITE_SENTRY_DSN,
     enableLogs: true,
     integrations: [
       Sentry.consoleLoggingIntegration({ levels: ['log', 'warn', 'error'] }),

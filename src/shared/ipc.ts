@@ -17,5 +17,8 @@ export const IPC = {
   },
   popup: {
     shown: 'popup:shown'
+  },
+  analytics: {
+    capture: 'analytics:capture'
   }
 } as const

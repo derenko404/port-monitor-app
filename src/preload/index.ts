@@ -1,6 +1,7 @@
 import '@sentry/electron/preload'
 import { electronAPI } from '@electron-toolkit/preload'
 import { contextBridge, ipcRenderer } from 'electron'
+import { AnalyticsEvent, AnalyticsProps } from '../shared/analytics'
 import { IPC } from '../shared/ipc'
 
 // Custom APIs for renderer
@@ -22,7 +23,9 @@ const api = {
   setSettings: (patch: Record<string, unknown>) => ipcRenderer.invoke(IPC.settings.set, patch),
   quit: () => ipcRenderer.send(IPC.app.quit),
   getVersion: () => ipcRenderer.invoke(IPC.app.version),
-  openExternal: (url: string) => ipcRenderer.invoke(IPC.app.open, url)
+  openExternal: (url: string) => ipcRenderer.invoke(IPC.app.open, url),
+  track: (event: AnalyticsEvent, props?: AnalyticsProps) =>
+    ipcRenderer.send(IPC.analytics.capture, event, props)
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to

@@ -1,4 +1,5 @@
 import { ElectronAPI } from '@electron-toolkit/preload'
+import { AnalyticsEvent, AnalyticsProps } from '../shared/analytics'
 import { ListPortsResult, Settings } from '../shared/types'
 
 declare global {
@@ -15,6 +16,7 @@ declare global {
       quit: () => void
       getVersion: () => Promise<string>
       openExternal: (url: string) => Promise<void>
+      track: (event: AnalyticsEvent, props?: AnalyticsProps) => void
     }
   }
 }

@@ -12,21 +12,23 @@ import {
   Tray
 } from 'electron'
 import { join } from 'path'
-import i18n from './i18n'
-import { IPC } from '../shared/ipc'
 import appIcon from '../../build/icon-dock.png?asset'
 import trayIcon from '../../resources/trayTemplate_black.png?asset'
+import { AnalyticsEvent, AnalyticsProps } from '../shared/analytics'
+import { IPC } from '../shared/ipc'
 import { localhostUrl, portRank } from '../shared/ports'
 import { isKnownTech } from '../shared/tech'
 import { PortEntry, Settings } from '../shared/types'
+import { capture, isFreshInstall, shutdownAnalytics } from './analytics'
+import i18n from './i18n'
 import { isPidAlive, killPid, listListeningPorts } from './ports'
 import { applyLoginItem, getSettings, setSettings } from './settings'
 
 // shipped app only — never from dev or local preview. DSN is a public client key.
 if (app.isPackaged) {
   Sentry.init({
-    dsn: 'https://d12a2d70cf46dcb3562085398fea5388@o4511563450220544.ingest.de.sentry.io/4511563458019408',
-    enableLogs: true, // ship console.* as structured logs
+    dsn: import.meta.env.MAIN_VITE_SENTRY_DSN,
+    enableLogs: true,
     integrations: [
       Sentry.consoleLoggingIntegration({ levels: ['log', 'warn', 'error'] }),
       Sentry.captureConsoleIntegration({ levels: ['error'] }) // console.error → issues
@@ -108,8 +110,7 @@ async function buildTrayMenu(): Promise<Menu> {
   const visible = ports
     .filter((p) => isPinned(p) || (p.port >= settings.portMin && p.port <= settings.portMax))
     .sort(
-      (a, b) =>
-        portRank(b, settings) - portRank(a, settings) || (b.started ?? 0) - (a.started ?? 0)
+      (a, b) => portRank(b, settings) - portRank(a, settings) || (b.started ?? 0) - (a.started ?? 0)
     )
 
   const shown = visible.slice(0, MAX)
@@ -125,7 +126,10 @@ async function buildTrayMenu(): Promise<Menu> {
             ? ([
                 {
                   label: i18n.t('tray.openBrowser'),
-                  click: () => shell.openExternal(localhostUrl(p.port))
+                  click: () => {
+                    capture('open_browser', { source: 'tray' })
+                    shell.openExternal(localhostUrl(p.port))
+                  }
                 },
                 { type: 'separator' }
               ] as Electron.MenuItemConstructorOptions[])
@@ -133,6 +137,7 @@ async function buildTrayMenu(): Promise<Menu> {
           {
             label: i18n.t('tray.kill'),
             click: () => {
+              capture('kill', { source: 'tray' })
               killPid(p.pid)
               notifyPortsChanged()
             }
@@ -166,6 +171,12 @@ async function buildTrayMenu(): Promise<Menu> {
   ])
 }
 
+// install (first launch only) + open; PostHog derives retention from app_open
+function trackLaunch(): void {
+  if (isFreshInstall()) capture('app_install')
+  capture('app_open')
+}
+
 app.whenReady().then(() => {
   ipcMain.handle(IPC.ports.list, () => listListeningPorts())
 
@@ -176,6 +187,13 @@ app.whenReady().then(() => {
   ipcMain.handle(IPC.settings.get, () => getSettings())
   ipcMain.handle(IPC.settings.set, (_e, patch: Partial<Settings>) => setSettings(patch))
   ipcMain.handle(IPC.app.open, (_e, url: string) => shell.openExternal(url))
+
+  // renderer-side events (search, pin, kill from list, settings, …)
+  ipcMain.on(IPC.analytics.capture, (_e, event: AnalyticsEvent, props?: AnalyticsProps) =>
+    capture(event, props)
+  )
+
+  trackLaunch()
 
   // reflect persisted login-item pref on launch
   applyLoginItem(getSettings())
@@ -198,7 +216,10 @@ app.whenReady().then(() => {
   app.dock?.setIcon(nativeImage.createFromPath(appIcon))
 
   globalShortcut.register('CommandOrControl+Shift+9', toggle)
-  app.on('will-quit', () => globalShortcut.unregisterAll())
+  app.on('will-quit', () => {
+    globalShortcut.unregisterAll()
+    shutdownAnalytics() // best-effort flush of any buffered events
+  })
 
   // pre-create the popup hidden so it's already rendered before the first open (no white flash)
   mainWindow = createWindow()
