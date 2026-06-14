@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.3.1](https://github.com/derenko404/port-monitor-app/compare/v1.3.0...v1.3.1) (2026-06-14)
+
+### Bug Fixes
+
+* remove startup on login, doesnt work for unsugned apps ([17e0ce9](https://github.com/derenko404/port-monitor-app/commit/17e0ce96c8d174aad9cb67658a0e8ebf6d9f9a2b))
+
 ## [1.3.0](https://github.com/derenko404/port-monitor-app/compare/v1.2.1...v1.3.0) (2026-06-14)
 
 ### Features
