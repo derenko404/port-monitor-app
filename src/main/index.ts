@@ -6,6 +6,7 @@ import {
   ipcMain,
   Menu,
   nativeImage,
+  nativeTheme,
   screen,
   shell,
   Tray
@@ -28,6 +29,8 @@ function createPopup(): BrowserWindow {
     resizable: false,
     skipTaskbar: true,
     alwaysOnTop: true,
+    // paint the window in the theme bg so there's no white flash before React mounts
+    backgroundColor: nativeTheme.shouldUseDarkColors ? '#0b0f19' : '#f1f3f8',
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: false
@@ -117,6 +120,9 @@ app.whenReady().then(() => {
 
   globalShortcut.register('CommandOrControl+Shift+9', toggle)
   app.on('will-quit', () => globalShortcut.unregisterAll())
+
+  // pre-create the popup hidden so it's already rendered before the first open (no white flash)
+  popup = createPopup()
 })
 
 ipcMain.on('app:quit', () => app.quit())

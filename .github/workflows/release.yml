@@ -31,6 +31,8 @@ jobs:
       - run: npm run build
 
       # package arm64 + x64 dmg and upload to the existing release
+      # CSC_IDENTITY_AUTO_DISCOVERY=false → don't hunt for a real cert; use ad-hoc ('-')
       - run: npx electron-builder --mac --publish always
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'

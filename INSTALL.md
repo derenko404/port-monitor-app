@@ -1,8 +1,8 @@
 # Installing Port Monitor
 
-Port Monitor is **not code-signed or notarized** — there's no paid Apple Developer
-account ($99/yr) behind it. The app is safe; macOS just shows extra warnings for
-apps that aren't signed by a registered developer. You bypass them once.
+Port Monitor is **ad-hoc signed but not notarized** — there's no paid Apple Developer
+account ($99/yr) behind it. The app is safe; macOS just shows a warning the first time
+because it wasn't checked by Apple. You bypass it once with **right-click → Open**.
 
 ---
 
@@ -23,27 +23,36 @@ Not sure?  → Apple menu →  About This Mac → "Chip" says Apple, or "Process
 ## Install + first launch
 
 1. Open the `.dmg` and drag **Port Monitor** into **Applications**.
-2. Launch it. macOS will say something like
-   *"Port Monitor can't be opened because Apple cannot check it for malicious software"*
-   or *"…is damaged"*. This is expected for unsigned apps.
+2. Launch it. The app is **ad-hoc signed** (not notarized — no paid Apple cert), so
+   the first launch shows: *"Port Monitor can't be opened because Apple cannot check
+   it for malicious software."* Expected.
 3. Bypass it **once**:
 
-   **Option A — right-click open**
+   **Option A — right-click open** (easiest)
    - In Applications, **right-click** (or Control-click) **Port Monitor** → **Open**
    - In the dialog, click **Open** again
-   - macOS remembers the choice; normal double-click works from then on
+   - macOS remembers it; normal double-click works from then on
 
    **Option B — System Settings**
    - Try to open it once (it gets blocked)
    - System Settings → **Privacy & Security** → scroll down → **Open Anyway**
 
-   **Option C — Terminal** (clears the quarantine flag)
-   ```bash
-   xattr -dr com.apple.quarantine "/Applications/Port Monitor.app"
-   ```
-
 After that it launches like any other app — icon appears in the **menubar** (top
 right), not the Dock.
+
+### "Port Monitor is damaged and can't be opened" (rare)
+
+If you ever see *"…is damaged and can't be opened"* — usually from an **older,
+unsigned build** or an unusual download path — that's the quarantine flag, and
+right-click → Open won't clear it. Remove it from Terminal, then open normally:
+
+```bash
+xattr -dr com.apple.quarantine "/Applications/Port Monitor.app"
+```
+
+(`xattr -cr "/Applications/Port Monitor.app"` also works.) Run it **after** moving
+the app to `/Applications`. One time only. Current ad-hoc-signed builds shouldn't
+hit this — right-click → Open is enough.
 
 ---
 

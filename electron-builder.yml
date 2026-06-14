@@ -1,4 +1,4 @@
-appId: io.bidmatic.portmonitor
+appId: io.github.derenko404.portmonitor
 productName: Port Monitor
 directories:
   buildResources: build
@@ -20,8 +20,12 @@ nsis:
   createDesktopShortcut: always
 mac:
   category: public.app-category.developer-tools
+  entitlements: build/entitlements.mac.plist
   entitlementsInherit: build/entitlements.mac.plist
   notarize: false
+  # ad-hoc sign (free, no Apple cert): downgrades "damaged" to a right-click-Open
+  # prompt and lets arm64 binaries run
+  identity: '-'
   target:
     - target: dmg
       arch:
