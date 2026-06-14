@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.5.1](https://github.com/derenko404/port-monitor-app/compare/v1.5.0...v1.5.1) (2026-06-14)
+
+### Bug Fixes
+
+* fix open on tray click ([3d5d66c](https://github.com/derenko404/port-monitor-app/commit/3d5d66cf54a0e672ebc8d4022450ccebdf1977fd))
+
 ## [1.5.0](https://github.com/derenko404/port-monitor-app/compare/v1.4.1...v1.5.0) (2026-06-14)
 
 ### Features
