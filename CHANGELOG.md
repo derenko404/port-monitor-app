@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.0](https://github.com/derenko404/port-monitor-app/compare/v1.3.1...v1.4.0) (2026-06-14)
+
+### Features
+
+* add containers names resolution ([743e434](https://github.com/derenko404/port-monitor-app/commit/743e4349fb6e13f7e8e2e0f71ce386283c42fda0))
+* add containers names resolution ([c1387bb](https://github.com/derenko404/port-monitor-app/commit/c1387bbdc14f35ac9268a799044dd13f778e5163))
+
 ## [1.3.1](https://github.com/derenko404/port-monitor-app/compare/v1.3.0...v1.3.1) (2026-06-14)
 
 ### Bug Fixes
