@@ -28,7 +28,12 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       # typecheck + electron-vite build (compiles main/preload/renderer)
+      # analytics/crash keys are baked in here via loadEnv → must be present at build
       - run: npm run build
+        env:
+          POSTHOG_KEY: ${{ secrets.POSTHOG_KEY }}
+          POSTHOG_HOST: ${{ secrets.POSTHOG_HOST }}
+          SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
 
       # package arm64 + x64 dmg and upload to the existing release
       # CSC_IDENTITY_AUTO_DISCOVERY=false → don't hunt for a real cert; use ad-hoc ('-')

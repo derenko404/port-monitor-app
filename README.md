@@ -5,9 +5,7 @@ A tiny macOS app to see what's listening on your ports - and kill it in one clic
 No more `lsof -i :3000` then `kill -9`. Open the app, find the port, done.
 
 <p align="center">
-  <img src="docs/ports.png" alt="Port list" width="320" />
-  <img src="docs/context-menu.png" alt="Right-click actions" width="320" />
-  <img src="docs/settings.png" alt="Settings" width="320" />
+  <img src="docs/row-actions.png" alt="Port list with row actions" width="320" />
 </p>
 
 ## Features
