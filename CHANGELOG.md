@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.2.0](https://github.com/derenko404/port-monitor-app/compare/v1.1.3...v1.2.0) (2026-06-14)
+
+### Features
+
+* update tray menu, update application window ([8bc9eee](https://github.com/derenko404/port-monitor-app/commit/8bc9eee51e5a088dc38e6c504b3e2ad4bd0e3752))
+
 ## [1.1.3](https://github.com/derenko404/port-monitor-app/compare/v1.1.2...v1.1.3) (2026-06-14)
 
 ## [1.1.2](https://github.com/derenko404/port-monitor-app/compare/v1.1.1...v1.1.2) (2026-06-14)
