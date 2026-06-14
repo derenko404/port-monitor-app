@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.5.0](https://github.com/derenko404/port-monitor-app/compare/v1.4.1...v1.5.0) (2026-06-14)
+
+### Features
+
+* add ability to stop containers ([0c24753](https://github.com/derenko404/port-monitor-app/commit/0c24753bd17bc2cc5d36586223129e53c7340581))
+
 ## [1.4.1](https://github.com/derenko404/port-monitor-app/compare/v1.4.0...v1.4.1) (2026-06-14)
 
 ### Bug Fixes
