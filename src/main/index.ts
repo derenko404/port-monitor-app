@@ -20,8 +20,8 @@ import { groupRank, localhostUrl, toRows } from '../shared/ports'
 import { isKnownTech } from '../shared/tech'
 import { PortEntry, PortGroup, Settings } from '../shared/types'
 import { capture, isFreshInstall, shutdownAnalytics } from './analytics'
-import i18n from './i18n'
 import { containerNamesResolverFor } from './container-names-resolver'
+import i18n from './i18n'
 import { isPidAlive, killPid, listListeningPorts } from './ports'
 import { applyLoginItem, getSettings, setSettings } from './settings'
 
@@ -60,6 +60,9 @@ function createWindow(): BrowserWindow {
     }
   })
 
+  // show on the active Space (incl. over fullscreen apps)
+  win.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true })
+
   win.on('close', (e) => {
     if (!isQuitting) {
       e.preventDefault()
@@ -80,7 +83,9 @@ function createWindow(): BrowserWindow {
 
 function showWindow(): void {
   if (!mainWindow) mainWindow = createWindow()
+  app.focus({ steal: true })
   mainWindow.show()
+  mainWindow.moveTop()
   mainWindow.focus()
   mainWindow.webContents.send(IPC.popup.shown)
 }
@@ -178,11 +183,11 @@ async function buildTrayMenu(): Promise<Menu> {
     : [{ label: i18n.t('tray.noPorts'), enabled: false }]
 
   if (overflow > 0) {
-    portItems.push({ label: i18n.t('tray.more', { count: overflow }), click: toggle })
+    portItems.push({ label: i18n.t('tray.more', { count: overflow }), click: showWindow })
   }
 
   return Menu.buildFromTemplate([
-    { label: i18n.t('tray.open'), click: toggle },
+    { label: i18n.t('tray.open'), click: showWindow },
     { type: 'separator' },
     {
       label: visible.length
@@ -241,7 +246,7 @@ app.whenReady().then(() => {
   tray = new Tray(img)
 
   tray.setToolTip(i18n.t('tray.tooltip'))
-  tray.on('click', toggle)
+  tray.on('click', showWindow)
 
   // right-click → live port list + actions
   tray.on('right-click', async () => {
