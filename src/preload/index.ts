@@ -5,7 +5,8 @@ import { contextBridge, ipcRenderer } from 'electron'
 // Custom APIs for renderer
 const api = {
   listPorts: () => ipcRenderer.invoke('ports:list'),
-  killPort: (pid: number) => ipcRenderer.invoke('ports:kill', pid),
+  killPort: (pid: number, signal?: string) => ipcRenderer.invoke('ports:kill', pid, signal),
+  isAlive: (pid: number) => ipcRenderer.invoke('ports:alive', pid),
   onShown: (cb: () => void) => {
     const handler = (): void => cb()
     ipcRenderer.on('popup:shown', handler)

@@ -6,7 +6,8 @@ declare global {
     electron: ElectronAPI
     api: {
       listPorts: () => Promise<PortEntry[]>
-      killPort: (pid: number) => Promise<{ ok: boolean; error?: string }>
+      killPort: (pid: number, signal?: string) => Promise<{ ok: boolean; error?: string }>
+      isAlive: (pid: number) => Promise<boolean>
       onShown: (cb: () => void) => () => void
       onPortsChanged: (cb: () => void) => () => void
       getSettings: () => Promise<Settings>

@@ -72,11 +72,24 @@ async function attachStartTimes(entries: PortEntry[]): Promise<void> {
   for (const e of entries) e.started = startByPid.get(e.pid) ?? null
 }
 
-export function killPid(pid: number): { ok: boolean; error?: string } {
+export function killPid(
+  pid: number,
+  signal: NodeJS.Signals = 'SIGTERM'
+): { ok: boolean; error?: string } {
   try {
-    process.kill(pid, 'SIGTERM')
+    process.kill(pid, signal)
     return { ok: true }
   } catch (err) {
     return { ok: false, error: (err as Error).message }
+  }
+}
+
+// signal 0 probes without killing: ESRCH = gone, EPERM = alive (no perms)
+export function isPidAlive(pid: number): boolean {
+  try {
+    process.kill(pid, 0)
+    return true
+  } catch (err) {
+    return (err as NodeJS.ErrnoException).code === 'EPERM'
   }
 }

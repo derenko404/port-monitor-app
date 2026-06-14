@@ -1,5 +1,7 @@
-import { useCallback, useEffect, useState } from 'react'
-import { DEFAULT_SETTINGS, Settings as SettingsType } from 'src/shared/types'
+import { useAtom } from 'jotai'
+import { useCallback, useEffect } from 'react'
+import { Settings as SettingsType } from 'src/shared/types'
+import { settingsAtom, settingsLoadedAtom } from '../store/settings'
 
 type UseSettings = {
   settings: SettingsType
@@ -7,16 +9,25 @@ type UseSettings = {
 }
 
 export const useSettings = (): UseSettings => {
-  const [settings, setSettings] = useState<SettingsType>(DEFAULT_SETTINGS)
+  const [settings, setSettings] = useAtom(settingsAtom)
+  const [loaded, setLoaded] = useAtom(settingsLoadedAtom)
 
+  // load once into the shared store (no-op if main preloaded it before render)
   useEffect(() => {
-    window.api.getSettings().then(setSettings)
-  }, [])
+    if (loaded) return
+    window.api.getSettings().then((s) => {
+      setSettings(s)
+      setLoaded(true)
+    })
+  }, [loaded, setSettings, setLoaded])
 
-  const updateSettings = useCallback(async (patch: Partial<SettingsType>) => {
-    const next = await window.api.setSettings(patch)
-    setSettings(next)
-  }, [])
+  const updateSettings = useCallback(
+    async (patch: Partial<SettingsType>) => {
+      const next = await window.api.setSettings(patch)
+      setSettings(next)
+    },
+    [setSettings]
+  )
 
   // apply theme: toggle .dark on <html>; follow OS when 'system'
   useEffect(() => {
@@ -36,8 +47,5 @@ export const useSettings = (): UseSettings => {
     return undefined
   }, [settings.theme])
 
-  return {
-    settings,
-    updateSettings
-  }
+  return { settings, updateSettings }
 }

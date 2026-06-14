@@ -20,10 +20,10 @@ interface DataTableProps<TData, TValue> {
   onInfo: (row: TData) => void
   onKill: (row: TData) => void
   isPinned: (row: TData) => boolean
+  priority?: (row: TData) => number
   rowKey: (row: TData) => string
   selectedKey: string | null
   onSelect: (row: TData | null) => void
-  // rendered in an inserted row directly below the selected row
   renderExpanded?: (row: TData) => React.ReactNode
 }
 
@@ -35,6 +35,7 @@ export function DataTable<TData, TValue>({
   onInfo,
   onKill,
   isPinned,
+  priority,
   rowKey,
   selectedKey,
   onSelect,
@@ -53,10 +54,9 @@ export function DataTable<TData, TValue>({
     getFilteredRowModel: getFilteredRowModel()
   })
 
-  // stable partition: pinned float to top, column-sort order kept within each group
-  const rows = [...table.getRowModel().rows].sort(
-    (a, b) => Number(isPinned(b.original)) - Number(isPinned(a.original))
-  )
+  // additive float rank: pinned +1, priority (dev) +1; column-sort order kept within each tier
+  const rank = (r: TData): number => (isPinned(r) ? 1 : 0) + (priority?.(r) ? 1 : 0)
+  const rows = [...table.getRowModel().rows].sort((a, b) => rank(b.original) - rank(a.original))
 
   const select = onSelect
 

@@ -1,7 +1,8 @@
 import { Home } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { PORT_MAX, PORT_MIN, Theme } from 'src/shared/types'
+import { PORT_MAX, PORT_MIN } from 'src/shared/constants'
+import { KillSignal, Theme } from 'src/shared/types'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { Label } from '../components/ui/label'
@@ -148,6 +149,20 @@ function Settings(): React.JSX.Element {
               />
             </div>
           </SettingRow>
+          <SettingRow label="Kill signal" desc="Default signal the Kill button sends.">
+            <Select
+              value={settings.killSignal}
+              onValueChange={(v) => updateSettings({ killSignal: v as KillSignal })}
+            >
+              <SelectTrigger className="w-28" size="sm">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="SIGTERM">SIGTERM</SelectItem>
+                <SelectItem value="SIGKILL">SIGKILL</SelectItem>
+              </SelectContent>
+            </Select>
+          </SettingRow>
         </Section>
 
         <Section title="Appearance">
@@ -178,6 +193,17 @@ function Settings(): React.JSX.Element {
               id="startOnLogin"
               checked={settings.startOnLogin}
               onCheckedChange={(v) => updateSettings({ startOnLogin: v })}
+            />
+          </SettingRow>
+          <SettingRow
+            label="Share analytics"
+            desc="Send anonymous crash & error reports to help improve the app."
+            htmlFor="analytics"
+          >
+            <Switch
+              id="analytics"
+              checked={settings.analytics}
+              onCheckedChange={(v) => updateSettings({ analytics: v })}
             />
           </SettingRow>
         </Section>

@@ -14,20 +14,23 @@ import {
 import { join } from 'path'
 import appIcon from '../../build/icon-dock.png?asset'
 import trayIcon from '../../resources/trayTemplate_black.png?asset'
+import { portRank } from '../shared/ports'
+import { isKnownTech } from '../shared/tech'
 import { PortEntry, Settings } from '../shared/types'
-import { killPid, listListeningPorts } from './ports'
+import { isPidAlive, killPid, listListeningPorts } from './ports'
 import { applyLoginItem, getSettings, setSettings } from './settings'
 
-// DSN is a public client key (safe to commit) — only allows sending events
-Sentry.init({
-  dsn: 'https://d12a2d70cf46dcb3562085398fea5388@o4511563450220544.ingest.de.sentry.io/4511563458019408',
-  environment: is.dev ? 'development' : 'production',
-  enableLogs: true, // ship console.* as structured logs
-  integrations: [
-    Sentry.consoleLoggingIntegration({ levels: ['log', 'warn', 'error'] }),
-    Sentry.captureConsoleIntegration({ levels: ['error'] }) // console.error → issues
-  ]
-})
+// shipped app only — never from dev or local preview. DSN is a public client key.
+if (app.isPackaged) {
+  Sentry.init({
+    dsn: 'https://d12a2d70cf46dcb3562085398fea5388@o4511563450220544.ingest.de.sentry.io/4511563458019408',
+    enableLogs: true, // ship console.* as structured logs
+    integrations: [
+      Sentry.consoleLoggingIntegration({ levels: ['log', 'warn', 'error'] }),
+      Sentry.captureConsoleIntegration({ levels: ['error'] }) // console.error → issues
+    ]
+  })
+}
 
 let tray: Tray | null = null
 let mainWindow: BrowserWindow | null = null
@@ -99,9 +102,14 @@ async function buildTrayMenu(): Promise<Menu> {
 
   const MAX = 15
   const isPinned = (p: PortEntry): boolean => settings.pinned.includes(p.port)
+  // same order as the UI: portRank desc (pinned +1, dev +1), then uptime (newest first)
   const visible = ports
     .filter((p) => isPinned(p) || (p.port >= settings.portMin && p.port <= settings.portMax))
-    .sort((a, b) => Number(isPinned(b)) - Number(isPinned(a)) || a.port - b.port)
+    .sort(
+      (a, b) =>
+        portRank(b.port, isPinned(b)) - portRank(a.port, isPinned(a)) ||
+        (b.started ?? 0) - (a.started ?? 0)
+    )
 
   const shown = visible.slice(0, MAX)
   const overflow = visible.length - shown.length
@@ -112,6 +120,15 @@ async function buildTrayMenu(): Promise<Menu> {
         submenu: [
           { label: `PID ${p.pid}`, enabled: false },
           { type: 'separator' },
+          ...(isKnownTech(p.command)
+            ? ([
+                {
+                  label: '🌐 Open in browser',
+                  click: () => shell.openExternal(`http://localhost:${p.port}`)
+                },
+                { type: 'separator' }
+              ] as Electron.MenuItemConstructorOptions[])
+            : []),
           {
             label: '🛑 Kill',
             click: () => {
@@ -149,7 +166,8 @@ async function buildTrayMenu(): Promise<Menu> {
 app.whenReady().then(() => {
   ipcMain.handle('ports:list', () => listListeningPorts())
 
-  ipcMain.handle('ports:kill', (_e, pid: number) => killPid(pid))
+  ipcMain.handle('ports:kill', (_e, pid: number, signal?: NodeJS.Signals) => killPid(pid, signal))
+  ipcMain.handle('ports:alive', (_e, pid: number) => isPidAlive(pid))
 
   ipcMain.handle('app:version', () => app.getVersion())
   ipcMain.handle('settings:get', () => getSettings())

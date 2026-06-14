@@ -1,7 +1,8 @@
 import { app } from 'electron'
 import { readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { DEFAULT_SETTINGS, POLL_MAX, POLL_MIN, PORT_MAX, PORT_MIN, Settings } from '../shared/types'
+import { DEFAULT_SETTINGS, POLL_MAX, POLL_MIN, PORT_MAX, PORT_MIN } from '../shared/constants'
+import { Settings } from '../shared/types'
 
 const file = (): string => join(app.getPath('userData'), 'settings.json')
 
@@ -36,6 +37,8 @@ function sanitize(s: Settings): Settings {
     polling: !!s.polling,
     pollInterval: Math.min(POLL_MAX, Math.max(POLL_MIN, Math.round(s.pollInterval))),
     theme: ['dark', 'light', 'system'].includes(s.theme) ? s.theme : 'system',
+    killSignal: s.killSignal === 'SIGKILL' ? 'SIGKILL' : 'SIGTERM',
+    analytics: s.analytics !== false, // default on
     pinned: s.pinned.filter((port) => Number.isInteger(port)),
     ...sanitizeRange(s)
   }

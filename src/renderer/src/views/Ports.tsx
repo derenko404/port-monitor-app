@@ -1,9 +1,10 @@
 import { useSettings } from '@renderer/hooks/use-settings'
 import { cn, sleep } from '@renderer/lib/utils'
 import { useAtom } from 'jotai'
-import { RefreshCw, Search, Settings as SettingsIcon, X } from 'lucide-react'
+import { Loader2, RefreshCw, Search, Settings as SettingsIcon, X } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { isDevPort } from 'src/shared/ports'
 import { PortEntry } from 'src/shared/types'
 import { columns } from '../columns'
 import AppIcon from '../components/AppIcon'
@@ -24,6 +25,16 @@ import { Button, buttonVariants } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { portsAtom, portsLoadedAtom } from '../store/ports'
 
+// poll until the pid is gone or the window elapses; returns true if it exited
+async function waitGone(pid: number, ms = 1500): Promise<boolean> {
+  const end = Date.now() + ms
+  while (Date.now() < end) {
+    if (!(await window.api.isAlive(pid))) return true
+    await sleep(100)
+  }
+  return false
+}
+
 function Ports(): React.JSX.Element {
   const nav = useNavigate()
 
@@ -33,6 +44,8 @@ function Ports(): React.JSX.Element {
   const [spinning, setSpinning] = useState(false)
   const [infoPort, setInfoPort] = useState<PortEntry | null>(null)
   const [killTarget, setKillTarget] = useState<PortEntry | null>(null)
+  const [forceTarget, setForceTarget] = useState<PortEntry | null>(null)
+  const [busy, setBusy] = useState(false) // kill in progress (SIGTERM + grace wait, or SIGKILL)
   const [selected, setSelected] = useState<PortEntry | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const { settings, updateSettings } = useSettings()
@@ -65,12 +78,29 @@ function Ports(): React.JSX.Element {
   )
 
   const doKill = useCallback(async () => {
-    if (!killTarget) return
-    const res = await window.api.killPort(killTarget.pid)
+    if (!killTarget || busy) return
+    const t = killTarget
+    setBusy(true)
+    const res = await window.api.killPort(t.pid, settings.killSignal)
     if (!res.ok) console.error('kill failed:', res.error)
+    // poll until it exits; if it ignored the signal, offer to force (unless already SIGKILL)
+    const gone = await waitGone(t.pid)
+    setBusy(false)
     setKillTarget(null)
+    if (gone || settings.killSignal === 'SIGKILL') refresh()
+    else setForceTarget(t)
+  }, [killTarget, busy, refresh, settings.killSignal])
+
+  const doForceKill = useCallback(async () => {
+    if (!forceTarget || busy) return
+    setBusy(true)
+    const res = await window.api.killPort(forceTarget.pid, 'SIGKILL')
+    if (!res.ok) console.error('force kill failed:', res.error)
+    await sleep(400)
+    setBusy(false)
+    setForceTarget(null)
     refresh()
-  }, [killTarget, refresh])
+  }, [forceTarget, busy, refresh])
 
   // Initial data fetch on mount. refresh() sets state after an async IPC call,
   // not synchronously — this is a legit "load from external system" effect, not
@@ -143,6 +173,7 @@ function Ports(): React.JSX.Element {
             onInfo={setInfoPort}
             onKill={setKillTarget}
             isPinned={(p) => !!p.pinned}
+            priority={(p) => (isDevPort(p.port) ? 1 : 0)}
             rowKey={(p) => String(p.port)}
             selectedKey={selected ? String(selected.port) : null}
             onSelect={setSelected}
@@ -178,11 +209,12 @@ function Ports(): React.JSX.Element {
 
       <PortInfoDialog port={infoPort} onClose={() => setInfoPort(null)} />
 
-      <AlertDialog open={!!killTarget} onOpenChange={(o) => !o && setKillTarget(null)}>
+      <AlertDialog open={!!killTarget} onOpenChange={(o) => !o && !busy && setKillTarget(null)}>
         <AlertDialogContent className="max-w-[300px] gap-0 p-5">
           <button
             onClick={() => setKillTarget(null)}
-            className="absolute top-4 right-4 rounded-xs opacity-70 transition-opacity hover:opacity-100 focus:outline-hidden"
+            disabled={busy}
+            className="absolute top-4 right-4 rounded-xs opacity-70 transition-opacity hover:opacity-100 focus:outline-hidden disabled:opacity-30"
             aria-label="Close"
           >
             <X className="size-4" />
@@ -201,16 +233,81 @@ function Ports(): React.JSX.Element {
               </div>
             </div>
             <AlertDialogDescription className="text-xs leading-relaxed">
-              Sends SIGTERM. Unsaved work in this process will be lost.
+              {settings.killSignal === 'SIGKILL'
+                ? 'Sends SIGKILL — force-stops immediately, no chance to clean up.'
+                : 'Sends SIGTERM. Unsaved work in this process will be lost.'}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="mt-5 flex-row gap-2">
-            <AlertDialogCancel className="mt-0 h-9 flex-1">Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={busy} className="mt-0 h-9 flex-1">
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction
-              className={cn(buttonVariants({ variant: 'destructive' }), 'h-9 flex-1')}
-              onClick={doKill}
+              className={cn(buttonVariants({ variant: 'destructive' }), 'h-9 flex-1 gap-1.5')}
+              disabled={busy}
+              onClick={(e) => {
+                e.preventDefault() // keep dialog open through the SIGTERM + poll
+                doKill()
+              }}
             >
-              Kill
+              {busy ? (
+                <>
+                  <Loader2 className="size-4 animate-spin" /> Killing…
+                </>
+              ) : (
+                'Kill'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={!!forceTarget} onOpenChange={(o) => !o && !busy && setForceTarget(null)}>
+        <AlertDialogContent className="max-w-[300px] gap-0 p-5">
+          <button
+            onClick={() => setForceTarget(null)}
+            disabled={busy}
+            className="absolute top-4 right-4 rounded-xs opacity-70 transition-opacity hover:opacity-100 focus:outline-hidden disabled:opacity-30"
+            aria-label="Close"
+          >
+            <X className="size-4" />
+          </button>
+          <AlertDialogHeader className="items-center gap-3 text-center">
+            <span className="grid size-11 place-items-center rounded-xl bg-destructive/10 ring-1 ring-destructive/30">
+              <AppIcon command={forceTarget?.command ?? ''} className="size-5" />
+            </span>
+            <div className="flex flex-col items-center gap-1.5">
+              <AlertDialogTitle className="text-sm">Still running — force kill?</AlertDialogTitle>
+              <div className="flex items-center gap-2 text-xs">
+                <span className="font-medium text-foreground">{forceTarget?.command}</span>
+                <span className="rounded bg-sky-500/10 px-1.5 py-0.5 font-mono font-medium text-sky-700 dark:text-sky-400">
+                  :{forceTarget?.port}
+                </span>
+              </div>
+            </div>
+            <AlertDialogDescription className="text-xs leading-relaxed">
+              It ignored SIGTERM. SIGKILL force-stops it immediately.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="mt-5 flex-row gap-2">
+            <AlertDialogCancel disabled={busy} className="mt-0 h-9 flex-1">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              className={cn(buttonVariants({ variant: 'destructive' }), 'h-9 flex-1 gap-1.5')}
+              disabled={busy}
+              onClick={(e) => {
+                e.preventDefault()
+                doForceKill()
+              }}
+            >
+              {busy ? (
+                <>
+                  <Loader2 className="size-4 animate-spin" /> Killing…
+                </>
+              ) : (
+                'Force kill'
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
