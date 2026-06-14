@@ -1,13 +1,29 @@
 import { execFile } from 'node:child_process'
 import { promisify } from 'node:util'
-import { PortEntry } from '../shared/types'
+import { ListPortsResult, PortEntry, PortsError } from '../shared/types'
 
 const execFileAsync = promisify(execFile)
 
-export async function listListeningPorts(): Promise<PortEntry[]> {
+type ExecError = NodeJS.ErrnoException & { stdout?: string; stderr?: string }
+
+const PERMISSION_RE = /permission denied|operation not permitted|not permitted|EPERM|EACCES/i
+
+export async function listListeningPorts(): Promise<ListPortsResult> {
   // -F machine format: one field per line, prefixed by type char.
   // c=command, p=pid, n=name. p/c apply to all following n lines.
-  const { stdout } = await execFileAsync('lsof', ['-nP', '-iTCP', '-sTCP:LISTEN', '-FcnpP'])
+  let stdout = ''
+  try {
+    ;({ stdout } = await execFileAsync('lsof', ['-nP', '-iTCP', '-sTCP:LISTEN', '-FcnpP']))
+  } catch (err) {
+    const e = err as ExecError
+    // lsof exits 1 even on benign partial results — keep any data it did emit
+    stdout = e.stdout ?? ''
+    if (!stdout.trim()) {
+      const blob = `${e.stderr ?? ''} ${e.message ?? ''}`
+      const error: PortsError = PERMISSION_RE.test(blob) ? 'permission' : 'unknown'
+      return { ports: [], error }
+    }
+  }
 
   const entries: PortEntry[] = []
   let command = ''
@@ -48,7 +64,7 @@ export async function listListeningPorts(): Promise<PortEntry[]> {
   })
 
   await attachStartTimes(deduped)
-  return deduped
+  return { ports: deduped, error: null }
 }
 
 // Enrich entries with process start time via `ps`. lsof can't give this.

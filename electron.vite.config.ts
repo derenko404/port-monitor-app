@@ -10,6 +10,7 @@ export default defineConfig({
     resolve: {
       alias: {
         '@renderer': resolve('src/renderer/src'),
+        '@ui': resolve('src/renderer/src/components/ui'),
         '@': resolve('src/renderer/src'),
         src: resolve('src')
       }

@@ -1,8 +1,8 @@
 # Port Monitor
 
-A tiny macOS menubar app to see what's listening on your ports — and kill it in one click.
+A tiny macOS app to see what's listening on your ports - and kill it in one click.
 
-No more `lsof -i :3000` then `kill -9`. Open the tray, find the port, done.
+No more `lsof -i :3000` then `kill -9`. Open the app, find the port, done.
 
 <p align="center">
   <img src="docs/ports.png" alt="Port list" width="320" />
@@ -20,8 +20,7 @@ No more `lsof -i :3000` then `kill -9`. Open the tray, find the port, done.
 - 🔄 **Auto-refresh** — configurable interval, or refresh on demand
 - 🌗 **Light / dark / system** theme
 - ⌨️ **Global shortcut** — `⌘⇧9` to toggle the popup from anywhere
-- 🗂️ **Right-click actions** — view details, open in browser, copy the kill command
-- 🪶 **Menubar-native** — lives in the tray, no Dock clutter
+- 🗂️ **Actions** — view details, open in browser, copy the kill command
 
 ## Install
 
@@ -46,16 +45,20 @@ brew upgrade --cask port-monitor
    - Intel → `port-monitor-<version>-x64.dmg`
 2. Open the dmg, drag **Port Monitor** to Applications.
 
-> **First launch:** the app isn't notarized (no paid Apple Developer cert), so macOS will warn.
-> Right-click the app → **Open** → **Open** again. You only do this once.
-> Or clear quarantine: `xattr -dr com.apple.quarantine "/Applications/Port Monitor.app"`
+### First launch
+
+The app isn't signed to run locally (no paid Apple Developer cert), so macOS blocks
+it the first time — whether installed via Homebrew or manually. Bypass it once, either way:
+
+- **System Settings → Privacy & Security → Open Anyway** (after trying to open it once), or
+- clear quarantine from Terminal:
+  ```bash
+  xattr -dr com.apple.quarantine "/Applications/Port Monitor.app"
+  ```
+
+You only do this once per install.
 
 ## Usage
-
-- Click the menubar icon (or press `⌘⇧9`) to open the popup
-- Type to filter; click the ⊗ on a row to kill that process
-- **Right-click a row** for: Info · Open in browser · Copy kill command
-- Gear icon → settings (auto-refresh, interval, port range, theme, launch at login)
 
 Port Monitor only sees processes your user can access (same as `lsof` without `sudo`).
 

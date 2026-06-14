@@ -12,9 +12,11 @@ import {
   Tray
 } from 'electron'
 import { join } from 'path'
+import i18n from './i18n'
+import { IPC } from '../shared/ipc'
 import appIcon from '../../build/icon-dock.png?asset'
 import trayIcon from '../../resources/trayTemplate_black.png?asset'
-import { portRank } from '../shared/ports'
+import { localhostUrl, portRank } from '../shared/ports'
 import { isKnownTech } from '../shared/tech'
 import { PortEntry, Settings } from '../shared/types'
 import { isPidAlive, killPid, listListeningPorts } from './ports'
@@ -77,7 +79,7 @@ function showWindow(): void {
   if (!mainWindow) mainWindow = createWindow()
   mainWindow.show()
   mainWindow.focus()
-  mainWindow.webContents.send('popup:shown')
+  mainWindow.webContents.send(IPC.popup.shown)
 }
 
 function toggle(): void {
@@ -87,7 +89,7 @@ function toggle(): void {
 
 // tell an open window to re-scan after a port changed from the tray
 function notifyPortsChanged(): void {
-  mainWindow?.webContents.send('ports:changed')
+  mainWindow?.webContents.send(IPC.ports.changed)
 }
 
 // build the tray menu from the live port list (filtered/sorted like the UI)
@@ -95,20 +97,19 @@ async function buildTrayMenu(): Promise<Menu> {
   const settings = getSettings()
   let ports: PortEntry[] = []
   try {
-    ports = await listListeningPorts()
+    ports = (await listListeningPorts()).ports
   } catch {
     // ignore — show an empty list rather than failing the menu
   }
 
   const MAX = 15
   const isPinned = (p: PortEntry): boolean => settings.pinned.includes(p.port)
-  // same order as the UI: portRank desc (pinned +1, dev +1), then uptime (newest first)
+  // same order as the UI: shared portRank desc, then uptime (newest first)
   const visible = ports
     .filter((p) => isPinned(p) || (p.port >= settings.portMin && p.port <= settings.portMax))
     .sort(
       (a, b) =>
-        portRank(b.port, isPinned(b)) - portRank(a.port, isPinned(a)) ||
-        (b.started ?? 0) - (a.started ?? 0)
+        portRank(b, settings) - portRank(a, settings) || (b.started ?? 0) - (a.started ?? 0)
     )
 
   const shown = visible.slice(0, MAX)
@@ -118,19 +119,19 @@ async function buildTrayMenu(): Promise<Menu> {
     ? shown.map((p) => ({
         label: `${isPinned(p) ? '📌 ' : ''}:${p.port}  —  ${p.command}`,
         submenu: [
-          { label: `PID ${p.pid}`, enabled: false },
+          { label: i18n.t('tray.pid', { pid: p.pid }), enabled: false },
           { type: 'separator' },
           ...(isKnownTech(p.command)
             ? ([
                 {
-                  label: '🌐 Open in browser',
-                  click: () => shell.openExternal(`http://localhost:${p.port}`)
+                  label: i18n.t('tray.openBrowser'),
+                  click: () => shell.openExternal(localhostUrl(p.port))
                 },
                 { type: 'separator' }
               ] as Electron.MenuItemConstructorOptions[])
             : []),
           {
-            label: '🛑 Kill',
+            label: i18n.t('tray.kill'),
             click: () => {
               killPid(p.pid)
               notifyPortsChanged()
@@ -138,23 +139,25 @@ async function buildTrayMenu(): Promise<Menu> {
           }
         ]
       }))
-    : [{ label: 'No listening ports', enabled: false }]
+    : [{ label: i18n.t('tray.noPorts'), enabled: false }]
 
   if (overflow > 0) {
-    portItems.push({ label: `+ ${overflow} more…`, click: toggle })
+    portItems.push({ label: i18n.t('tray.more', { count: overflow }), click: toggle })
   }
 
   return Menu.buildFromTemplate([
-    { label: 'Open Port Monitor', click: toggle },
+    { label: i18n.t('tray.open'), click: toggle },
     { type: 'separator' },
     {
-      label: visible.length ? `Listening ports (${visible.length})` : 'Listening ports',
+      label: visible.length
+        ? i18n.t('tray.listeningPortsCount', { count: visible.length })
+        : i18n.t('tray.listeningPorts'),
       enabled: false
     },
     ...portItems,
     { type: 'separator' },
     {
-      label: 'Quit Port Monitor',
+      label: i18n.t('tray.quit'),
       click: () => {
         isQuitting = true
         app.quit()
@@ -164,15 +167,15 @@ async function buildTrayMenu(): Promise<Menu> {
 }
 
 app.whenReady().then(() => {
-  ipcMain.handle('ports:list', () => listListeningPorts())
+  ipcMain.handle(IPC.ports.list, () => listListeningPorts())
 
-  ipcMain.handle('ports:kill', (_e, pid: number, signal?: NodeJS.Signals) => killPid(pid, signal))
-  ipcMain.handle('ports:alive', (_e, pid: number) => isPidAlive(pid))
+  ipcMain.handle(IPC.ports.kill, (_e, pid: number, signal?: NodeJS.Signals) => killPid(pid, signal))
+  ipcMain.handle(IPC.ports.alive, (_e, pid: number) => isPidAlive(pid))
 
-  ipcMain.handle('app:version', () => app.getVersion())
-  ipcMain.handle('settings:get', () => getSettings())
-  ipcMain.handle('settings:set', (_e, patch: Partial<Settings>) => setSettings(patch))
-  ipcMain.handle('app:open', (_e, url: string) => shell.openExternal(url))
+  ipcMain.handle(IPC.app.version, () => app.getVersion())
+  ipcMain.handle(IPC.settings.get, () => getSettings())
+  ipcMain.handle(IPC.settings.set, (_e, patch: Partial<Settings>) => setSettings(patch))
+  ipcMain.handle(IPC.app.open, (_e, url: string) => shell.openExternal(url))
 
   // reflect persisted login-item pref on launch
   applyLoginItem(getSettings())
@@ -184,7 +187,7 @@ app.whenReady().then(() => {
 
   tray = new Tray(img)
 
-  tray.setToolTip('Port Monitor')
+  tray.setToolTip(i18n.t('tray.tooltip'))
   tray.on('click', toggle)
 
   // right-click → live port list + actions
@@ -211,7 +214,7 @@ app.whenReady().then(() => {
   })
 })
 
-ipcMain.on('app:quit', () => {
+ipcMain.on(IPC.app.quit, () => {
   isQuitting = true
   app.quit()
 })

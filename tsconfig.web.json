@@ -15,6 +15,9 @@
       "@renderer/*": [
         "src/renderer/src/*"
       ],
+      "@ui/*": [
+        "src/renderer/src/components/ui/*"
+      ],
       "@/*": [
         "src/renderer/src/*"
       ]

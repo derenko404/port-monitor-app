@@ -9,38 +9,38 @@ import {
 } from '@tanstack/react-table'
 import { ChevronDown, ChevronRight, ChevronUp, Loader2 } from 'lucide-react'
 import { Fragment, useEffect, useRef, useState } from 'react'
-import { cn } from '../lib/utils'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table'
+import { useTranslation } from 'react-i18next'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@ui/table'
+import { cn } from '@renderer/features/shared/lib/utils'
 
-interface DataTableProps<TData, TValue> {
+interface PortsTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
   data: TData[]
   filter: string
   loading?: boolean
   onInfo: (row: TData) => void
   onKill: (row: TData) => void
-  isPinned: (row: TData) => boolean
-  priority?: (row: TData) => number
+  rank?: (row: TData) => number
   rowKey: (row: TData) => string
   selectedKey: string | null
   onSelect: (row: TData | null) => void
   renderExpanded?: (row: TData) => React.ReactNode
 }
 
-export function DataTable<TData, TValue>({
+export function PortsTable<TData, TValue>({
   columns,
   data,
   filter,
   loading,
   onInfo,
   onKill,
-  isPinned,
-  priority,
+  rank: rankOf,
   rowKey,
   selectedKey,
   onSelect,
   renderExpanded
-}: DataTableProps<TData, TValue>): React.JSX.Element {
+}: PortsTableProps<TData, TValue>): React.JSX.Element {
+  const { t } = useTranslation()
   const [sorting, setSorting] = useState<SortingState>([{ id: 'started', desc: true }])
   const selectedRef = useRef<HTMLTableRowElement>(null)
 
@@ -54,8 +54,8 @@ export function DataTable<TData, TValue>({
     getFilteredRowModel: getFilteredRowModel()
   })
 
-  // additive float rank: pinned +1, priority (dev) +1; column-sort order kept within each tier
-  const rank = (r: TData): number => (isPinned(r) ? 1 : 0) + (priority?.(r) ? 1 : 0)
+  // float to the top by caller-supplied rank; column-sort order kept within each tier
+  const rank = (r: TData): number => rankOf?.(r) ?? 0
   const rows = [...table.getRowModel().rows].sort((a, b) => rank(b.original) - rank(a.original))
 
   const select = onSelect
@@ -138,7 +138,7 @@ export function DataTable<TData, TValue>({
             <TableCell colSpan={columns.length + 1} className="py-10">
               <div className="flex flex-col items-center gap-2 text-muted-foreground">
                 <Loader2 className="size-5 animate-spin" />
-                <span className="text-xs">Scanning ports…</span>
+                <span className="text-xs">{t('ports.scanning')}</span>
               </div>
             </TableCell>
           </TableRow>
@@ -186,7 +186,7 @@ export function DataTable<TData, TValue>({
               colSpan={columns.length + 1}
               className="text-center text-muted-foreground py-4"
             >
-              No ports
+              {t('ports.empty')}
             </TableCell>
           </TableRow>
         )}

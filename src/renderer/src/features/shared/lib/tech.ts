@@ -1,3 +1,4 @@
+import { Terminal } from 'lucide-react'
 import { IconType } from 'react-icons'
 import {
   SiBun,
@@ -17,14 +18,11 @@ import {
   SiRust,
   SiVite
 } from 'react-icons/si'
-import { Terminal } from 'lucide-react'
 import { TechKey, techKey } from 'src/shared/tech'
 
 export { isKnownTech } from 'src/shared/tech'
 
-// brand icon + optional brandHex per tech key. No hex → inherits muted
-// (black/white brands that vanish on dark, e.g. Next/Deno/Bun/Rust).
-// Record<TechKey, …> forces an icon for every key added to TECH in shared/tech.
+// brand icon + color
 const ICONS: Record<TechKey, [IconType, string?]> = {
   docker: [SiDocker, '#2496ED'],
   next: [SiNextdotjs],
@@ -44,7 +42,6 @@ const ICONS: Record<TechKey, [IconType, string?]> = {
   rust: [SiRust]
 }
 
-// resolve the brand icon for a command, falling back to a generic terminal glyph
 export function iconFor(command: string): [IconType, string?] {
   const key = techKey(command)
   return key ? ICONS[key] : [Terminal, undefined]

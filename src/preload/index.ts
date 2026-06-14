@@ -1,27 +1,28 @@
 import '@sentry/electron/preload'
 import { electronAPI } from '@electron-toolkit/preload'
 import { contextBridge, ipcRenderer } from 'electron'
+import { IPC } from '../shared/ipc'
 
 // Custom APIs for renderer
 const api = {
-  listPorts: () => ipcRenderer.invoke('ports:list'),
-  killPort: (pid: number, signal?: string) => ipcRenderer.invoke('ports:kill', pid, signal),
-  isAlive: (pid: number) => ipcRenderer.invoke('ports:alive', pid),
+  listPorts: () => ipcRenderer.invoke(IPC.ports.list),
+  killPort: (pid: number, signal?: string) => ipcRenderer.invoke(IPC.ports.kill, pid, signal),
+  isAlive: (pid: number) => ipcRenderer.invoke(IPC.ports.alive, pid),
   onShown: (cb: () => void) => {
     const handler = (): void => cb()
-    ipcRenderer.on('popup:shown', handler)
-    return () => ipcRenderer.removeListener('popup:shown', handler)
+    ipcRenderer.on(IPC.popup.shown, handler)
+    return () => ipcRenderer.removeListener(IPC.popup.shown, handler)
   },
   onPortsChanged: (cb: () => void) => {
     const handler = (): void => cb()
-    ipcRenderer.on('ports:changed', handler)
-    return () => ipcRenderer.removeListener('ports:changed', handler)
+    ipcRenderer.on(IPC.ports.changed, handler)
+    return () => ipcRenderer.removeListener(IPC.ports.changed, handler)
   },
-  getSettings: () => ipcRenderer.invoke('settings:get'),
-  setSettings: (patch: Record<string, unknown>) => ipcRenderer.invoke('settings:set', patch),
-  quit: () => ipcRenderer.send('app:quit'),
-  getVersion: () => ipcRenderer.invoke('app:version'),
-  openExternal: (url: string) => ipcRenderer.invoke('app:open', url)
+  getSettings: () => ipcRenderer.invoke(IPC.settings.get),
+  setSettings: (patch: Record<string, unknown>) => ipcRenderer.invoke(IPC.settings.set, patch),
+  quit: () => ipcRenderer.send(IPC.app.quit),
+  getVersion: () => ipcRenderer.invoke(IPC.app.version),
+  openExternal: (url: string) => ipcRenderer.invoke(IPC.app.open, url)
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to

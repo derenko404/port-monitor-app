@@ -11,6 +11,14 @@ export interface PortEntry {
 export type Theme = 'dark' | 'light' | 'system'
 export type KillSignal = 'SIGTERM' | 'SIGKILL'
 
+// why ports could not be listed; null = success (ports may still be empty)
+export type PortsError = 'permission' | 'unknown'
+
+export interface ListPortsResult {
+  ports: PortEntry[]
+  error: PortsError | null
+}
+
 export interface Settings {
   startOnLogin: boolean
   polling: boolean

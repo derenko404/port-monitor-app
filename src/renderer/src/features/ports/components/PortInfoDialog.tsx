@@ -1,5 +1,6 @@
+import { useTranslation } from 'react-i18next'
 import { PortEntry } from 'src/shared/types'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@ui/dialog'
 import AppIcon from './AppIcon'
 
 interface PortInfoDialogProps {
@@ -17,9 +18,10 @@ function Row({ label, value }: { label: string; value: React.ReactNode }): React
 }
 
 function PortInfoDialog({ port: p, onClose }: PortInfoDialogProps): React.JSX.Element {
+  const { t } = useTranslation()
   return (
     <Dialog open={!!p} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-[300px] gap-0 p-5">
+      <DialogContent className="max-w-75 gap-0 p-5">
         <DialogHeader className="items-center gap-3 text-center">
           <span className="grid size-11 place-items-center rounded-xl bg-muted ring-1 ring-border">
             <AppIcon command={p?.command ?? ''} className="size-5" />
@@ -34,10 +36,13 @@ function PortInfoDialog({ port: p, onClose }: PortInfoDialogProps): React.JSX.El
 
         {p && (
           <div className="mt-4 divide-y rounded-lg border text-xs">
-            <Row label="Protocol" value={p.protocol || '—'} />
-            <Row label="PID" value={p.pid} />
-            <Row label="Address" value={p.address} />
-            <Row label="Started" value={p.started ? new Date(p.started).toLocaleString() : '—'} />
+            <Row label={t('ports.info.protocol')} value={p.protocol || t('ports.info.empty')} />
+            <Row label={t('ports.info.pid')} value={p.pid} />
+            <Row label={t('ports.info.address')} value={p.address} />
+            <Row
+              label={t('ports.info.started')}
+              value={p.started ? new Date(p.started).toLocaleString() : t('ports.info.empty')}
+            />
           </div>
         )}
       </DialogContent>

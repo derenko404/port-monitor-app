@@ -1,7 +1,8 @@
 import { useAtom } from 'jotai'
 import { useCallback, useEffect } from 'react'
 import { Settings as SettingsType } from 'src/shared/types'
-import { settingsAtom, settingsLoadedAtom } from '../store/settings'
+import { settingsAtom, settingsLoadedAtom } from '@renderer/store/settings'
+import { api } from '../lib/api'
 
 type UseSettings = {
   settings: SettingsType
@@ -15,7 +16,7 @@ export const useSettings = (): UseSettings => {
   // load once into the shared store (no-op if main preloaded it before render)
   useEffect(() => {
     if (loaded) return
-    window.api.getSettings().then((s) => {
+    api.getSettings().then((s) => {
       setSettings(s)
       setLoaded(true)
     })
@@ -23,7 +24,7 @@ export const useSettings = (): UseSettings => {
 
   const updateSettings = useCallback(
     async (patch: Partial<SettingsType>) => {
-      const next = await window.api.setSettings(patch)
+      const next = await api.setSettings(patch)
       setSettings(next)
     },
     [setSettings]

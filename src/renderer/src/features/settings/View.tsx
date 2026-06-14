@@ -1,20 +1,16 @@
+import { Button } from '@ui/button'
+import { Label } from '@ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@ui/select'
+import { Switch } from '@ui/switch'
 import { Home } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
-import { PORT_MAX, PORT_MIN } from 'src/shared/constants'
 import { KillSignal, Theme } from 'src/shared/types'
-import { Button } from '../components/ui/button'
-import { Input } from '../components/ui/input'
-import { Label } from '../components/ui/label'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from '../components/ui/select'
-import { Switch } from '../components/ui/switch'
-import { useSettings } from '../hooks/use-settings'
+import { api } from '../shared/lib/api'
+import { AppHeader } from '../shared/components/AppHeader'
+import { useSettings } from '../shared/hooks/use-settings'
+import { PortRangeField } from './components/PortRangeField'
 
 function Section({
   title,
@@ -59,41 +55,38 @@ function SettingRow({
 
 function Settings(): React.JSX.Element {
   const nav = useNavigate()
+  const { t } = useTranslation()
   const { settings, updateSettings } = useSettings()
   const [version, setVersion] = useState('')
 
-  // edit range as free text; commit (clamp + persist) on blur so typing isn't fought
-  const [minStr, setMinStr] = useState(String(settings.portMin))
-  const [maxStr, setMaxStr] = useState(String(settings.portMax))
   useEffect(() => {
-    // sync local text when persisted range changes (e.g. after clamp on blur)
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setMinStr(String(settings.portMin))
-    setMaxStr(String(settings.portMax))
-  }, [settings.portMin, settings.portMax])
-
-  useEffect(() => {
-    window.api.getVersion().then(setVersion)
+    api.getVersion().then(setVersion)
   }, [])
 
   return (
     <div className="flex flex-col h-screen bg-background text-foreground">
-      <header className="relative flex items-center gap-2 border-b p-2 pl-[76px] [-webkit-app-region:drag]">
-        <h1 className="absolute left-1/2 -translate-x-1/2 text-sm font-semibold">Settings</h1>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="ml-auto size-7 [-webkit-app-region:no-drag]"
-          title="Home"
-          onClick={() => nav(-1)}
-        >
-          <Home className="size-4" />
-        </Button>
-      </header>
+      <AppHeader
+        title={t('settings.title')}
+        actions={
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-7 [-webkit-app-region:no-drag]"
+            title={t('settings.home')}
+            onClick={() => nav(-1)}
+          >
+            <Home className="size-4" />
+          </Button>
+        }
+      />
 
       <div className="flex-1 space-y-4 overflow-auto p-3">
-        <Section title="Monitoring">
-          <SettingRow label="Auto-refresh" desc="Periodically re-scan ports." htmlFor="polling">
+        <Section title={t('settings.sections.monitoring')}>
+          <SettingRow
+            label={t('settings.autoRefresh.label')}
+            desc={t('settings.autoRefresh.desc')}
+            htmlFor="polling"
+          >
             <Switch
               id="polling"
               checked={settings.polling}
@@ -101,7 +94,7 @@ function Settings(): React.JSX.Element {
             />
           </SettingRow>
           {settings.polling && (
-            <SettingRow label="Refresh interval">
+            <SettingRow label={t('settings.refreshInterval.label')}>
               <Select
                 value={String(settings.pollInterval)}
                 onValueChange={(v) => updateSettings({ pollInterval: Number(v) })}
@@ -110,46 +103,20 @@ function Settings(): React.JSX.Element {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="5">5s</SelectItem>
-                  <SelectItem value="15">15s</SelectItem>
-                  <SelectItem value="30">30s</SelectItem>
-                  <SelectItem value="60">1m</SelectItem>
-                  <SelectItem value="120">2m</SelectItem>
-                  <SelectItem value="300">5m</SelectItem>
+                  <SelectItem value="5">{t('settings.intervals.5')}</SelectItem>
+                  <SelectItem value="15">{t('settings.intervals.15')}</SelectItem>
+                  <SelectItem value="30">{t('settings.intervals.30')}</SelectItem>
+                  <SelectItem value="60">{t('settings.intervals.60')}</SelectItem>
+                  <SelectItem value="120">{t('settings.intervals.120')}</SelectItem>
+                  <SelectItem value="300">{t('settings.intervals.300')}</SelectItem>
                 </SelectContent>
               </Select>
             </SettingRow>
           )}
-          <SettingRow label="Port range" desc="Only show ports in this range.">
-            <div className="flex items-center gap-1.5">
-              <Input
-                type="number"
-                min={PORT_MIN}
-                max={PORT_MAX}
-                value={minStr}
-                onChange={(e) => setMinStr(e.target.value)}
-                onBlur={() =>
-                  updateSettings({ portMin: minStr.trim() === '' ? PORT_MIN : Number(minStr) })
-                }
-                onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
-                className="h-7 w-[4.5rem] text-xs"
-              />
-              <span className="text-xs text-muted-foreground">–</span>
-              <Input
-                type="number"
-                min={PORT_MIN}
-                max={PORT_MAX}
-                value={maxStr}
-                onChange={(e) => setMaxStr(e.target.value)}
-                onBlur={() =>
-                  updateSettings({ portMax: maxStr.trim() === '' ? PORT_MAX : Number(maxStr) })
-                }
-                onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
-                className="h-7 w-[4.5rem] text-xs"
-              />
-            </div>
+          <SettingRow label={t('settings.portRange.label')} desc={t('settings.portRange.desc')}>
+            <PortRangeField />
           </SettingRow>
-          <SettingRow label="Kill signal" desc="Default signal the Kill button sends.">
+          <SettingRow label={t('settings.killSignal.label')} desc={t('settings.killSignal.desc')}>
             <Select
               value={settings.killSignal}
               onValueChange={(v) => updateSettings({ killSignal: v as KillSignal })}
@@ -165,8 +132,8 @@ function Settings(): React.JSX.Element {
           </SettingRow>
         </Section>
 
-        <Section title="Appearance">
-          <SettingRow label="Theme">
+        <Section title={t('settings.sections.appearance')}>
+          <SettingRow label={t('settings.theme.label')}>
             <Select
               value={settings.theme}
               onValueChange={(v) => updateSettings({ theme: v as Theme })}
@@ -175,18 +142,18 @@ function Settings(): React.JSX.Element {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="system">System</SelectItem>
-                <SelectItem value="light">Light</SelectItem>
-                <SelectItem value="dark">Dark</SelectItem>
+                <SelectItem value="system">{t('settings.theme.system')}</SelectItem>
+                <SelectItem value="light">{t('settings.theme.light')}</SelectItem>
+                <SelectItem value="dark">{t('settings.theme.dark')}</SelectItem>
               </SelectContent>
             </Select>
           </SettingRow>
         </Section>
 
-        <Section title="System">
+        <Section title={t('settings.sections.system')}>
           <SettingRow
-            label="Start on login"
-            desc="Launch hidden at system startup."
+            label={t('settings.startOnLogin.label')}
+            desc={t('settings.startOnLogin.desc')}
             htmlFor="startOnLogin"
           >
             <Switch
@@ -196,8 +163,8 @@ function Settings(): React.JSX.Element {
             />
           </SettingRow>
           <SettingRow
-            label="Share analytics"
-            desc="Send anonymous crash & error reports to help improve the app."
+            label={t('settings.analytics.label')}
+            desc={t('settings.analytics.desc')}
             htmlFor="analytics"
           >
             <Switch
@@ -211,7 +178,7 @@ function Settings(): React.JSX.Element {
 
       <footer className="border-t p-2">
         <p className="text-center text-[11px] text-muted-foreground">
-          {version ? `v${version}` : ''}
+          {version ? t('settings.version', { version }) : ''}
         </p>
       </footer>
     </div>

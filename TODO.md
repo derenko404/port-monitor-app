@@ -17,19 +17,18 @@ Feature ideas, grouped by value.
 
 ## Awareness
 
-- [ ] **New-port notification** — native notify when a port opens/closes (dev server boot)
 - [ ] **Diff since last refresh** — subtle "new" tag on freshly-opened ports
 
 ## Polish
 
 - [ ] **Keyboard nav** — ↑↓ select row, ⌘K focus search, Enter → info, ⌘⌫ → kill
-- [ ] **Empty / error states** — lsof fails / no permissions messaging
-- [ ] **Localization** - move all UI text to localization files and json text files for app text
+- [x] **Empty / error states** — lsof fails / no permissions messaging
+- [x] **Localization** - move all UI text to localization files and json text files for app text
 - [x] **Global hotkey** — toggle popup from anywhere (launch-at-login already done)
 
 ## Settings depth
 
-- [ ] Port range filter
+- [x] Port range filter
 - [ ] Refresh-on-open toggle
 - [x] Kill signal choice (SIGTERM / SIGKILL default)
 

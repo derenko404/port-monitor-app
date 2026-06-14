@@ -1,11 +1,11 @@
 import { ElectronAPI } from '@electron-toolkit/preload'
-import { PortEntry, Settings } from '../shared/types'
+import { ListPortsResult, Settings } from '../shared/types'
 
 declare global {
   interface Window {
     electron: ElectronAPI
     api: {
-      listPorts: () => Promise<PortEntry[]>
+      listPorts: () => Promise<ListPortsResult>
       killPort: (pid: number, signal?: string) => Promise<{ ok: boolean; error?: string }>
       isAlive: (pid: number) => Promise<boolean>
       onShown: (cb: () => void) => () => void

@@ -1,5 +1,5 @@
 import { createElement } from 'react'
-import { iconFor } from '../lib/tech'
+import { iconFor } from '../../shared/lib/tech'
 
 interface AppIconProps {
   command: string

@@ -7,6 +7,8 @@ import { createRoot } from 'react-dom/client'
 import { MemoryRouter } from 'react-router-dom'
 import { Theme } from 'src/shared/types'
 import App from './App'
+import { api } from './features/shared/lib/api'
+import './i18n'
 import { settingsAtom, settingsLoadedAtom } from './store/settings'
 
 if (import.meta.env.PROD) {
@@ -31,7 +33,7 @@ function applyTheme(theme: Theme): void {
 // preload settings into the store before first paint → no default→real flicker
 async function boot(): Promise<void> {
   try {
-    const s = await window.api.getSettings()
+    const s = await api.getSettings()
     store.set(settingsAtom, s)
     store.set(settingsLoadedAtom, true)
     applyTheme(s.theme)

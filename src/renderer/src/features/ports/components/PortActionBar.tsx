@@ -1,8 +1,9 @@
+import { cn } from '@renderer/features/shared/lib/utils'
+import { Button } from '@ui/button'
 import { Check, Copy, Globe, Info, OctagonX, Pin, PinOff } from 'lucide-react'
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { PortEntry } from 'src/shared/types'
-import { cn } from '../lib/utils'
-import { Button } from './ui/button'
 
 interface PortActionBarProps {
   port: PortEntry
@@ -23,6 +24,7 @@ export function PortActionBar({
   onTogglePin,
   onKill
 }: PortActionBarProps): React.JSX.Element {
+  const { t } = useTranslation()
   const [copied, setCopied] = useState(false)
 
   return (
@@ -32,8 +34,17 @@ export function PortActionBar({
         <Button
           variant="ghost"
           size="icon"
+          className="size-7 text-muted-foreground hover:text-foreground"
+          title={t('ports.actions.info')}
+          onClick={() => onInfo(port)}
+        >
+          <Info className="size-4" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
           className="size-7 text-muted-foreground hover:text-sky-600 dark:hover:text-sky-400"
-          title="Open in browser"
+          title={t('ports.actions.openBrowser')}
           onClick={() => onOpenExternal(port)}
         >
           <Globe className="size-4" />
@@ -42,16 +53,7 @@ export function PortActionBar({
           variant="ghost"
           size="icon"
           className="size-7 text-muted-foreground hover:text-foreground"
-          title="Info"
-          onClick={() => onInfo(port)}
-        >
-          <Info className="size-4" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="size-7 text-muted-foreground hover:text-foreground"
-          title="Copy kill command"
+          title={t('ports.actions.copyKill')}
           onClick={() => {
             onCopyKill(port)
             setCopied(true)
@@ -67,7 +69,7 @@ export function PortActionBar({
             'size-7 text-muted-foreground hover:text-foreground',
             pinned && 'text-sky-600 dark:text-sky-400'
           )}
-          title={pinned ? 'Unpin' : 'Pin'}
+          title={pinned ? t('ports.actions.unpin') : t('ports.actions.pin')}
           onClick={() => onTogglePin(port)}
         >
           {pinned ? <PinOff className="size-4" /> : <Pin className="size-4" />}
@@ -82,11 +84,11 @@ export function PortActionBar({
         variant="outline"
         size="sm"
         className="h-7 gap-1.5 border-destructive/30 px-8 text-destructive hover:border-destructive/50 hover:bg-destructive/10 hover:text-destructive"
-        title="Kill process (⌘⌫)"
+        title={t('ports.actions.kill')}
         onClick={() => onKill(port)}
       >
         <OctagonX className="size-4" />
-        Kill
+        {t('common.kill')}
       </Button>
     </div>
   )

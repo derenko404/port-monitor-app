@@ -1,0 +1,117 @@
+{
+  "common": {
+    "appName": "Port Monitor",
+    "cancel": "Cancel",
+    "close": "Close",
+    "kill": "Kill",
+    "killing": "Killing…"
+  },
+  "ports": {
+    "title": "Ports",
+    "refresh": "Refresh",
+    "settings": "Settings",
+    "search": "Search ports, apps, or PIDs…",
+    "scanning": "Scanning ports…",
+    "empty": "No ports",
+    "error": {
+      "permissionTitle": "Can't read ports",
+      "permissionDesc": "Port Monitor needs permission to list listening ports. Grant it access in System Settings → Privacy & Security, then retry.",
+      "unknownTitle": "Couldn't list ports",
+      "unknownDesc": "Something went wrong while scanning ports. Try again.",
+      "retry": "Retry"
+    },
+    "columns": {
+      "port": "Port",
+      "app": "App",
+      "pid": "PID",
+      "uptime": "Uptime"
+    },
+    "actions": {
+      "openBrowser": "Open in browser",
+      "info": "Info",
+      "copyKill": "Copy kill command",
+      "pin": "Pin",
+      "unpin": "Unpin",
+      "kill": "Kill process (⌘⌫)"
+    },
+    "info": {
+      "protocol": "Protocol",
+      "pid": "PID",
+      "address": "Address",
+      "started": "Started",
+      "empty": "—"
+    }
+  },
+  "dialogs": {
+    "kill": {
+      "title": "Kill this process?",
+      "descSigkill": "Sends SIGKILL — force-stops immediately, no chance to clean up.",
+      "descSigterm": "Sends SIGTERM. Unsaved work in this process will be lost.",
+      "confirm": "Kill"
+    },
+    "forceKill": {
+      "title": "Still running — force kill?",
+      "desc": "It ignored SIGTERM. SIGKILL force-stops it immediately.",
+      "confirm": "Force kill"
+    }
+  },
+  "settings": {
+    "title": "Settings",
+    "home": "Home",
+    "sections": {
+      "monitoring": "Monitoring",
+      "appearance": "Appearance",
+      "system": "System"
+    },
+    "autoRefresh": {
+      "label": "Auto-refresh",
+      "desc": "Periodically re-scan ports."
+    },
+    "refreshInterval": {
+      "label": "Refresh interval"
+    },
+    "intervals": {
+      "5": "5s",
+      "15": "15s",
+      "30": "30s",
+      "60": "1m",
+      "120": "2m",
+      "300": "5m"
+    },
+    "portRange": {
+      "label": "Port range",
+      "desc": "Only show ports in this range."
+    },
+    "killSignal": {
+      "label": "Kill signal",
+      "desc": "Default signal the Kill button sends."
+    },
+    "theme": {
+      "label": "Theme",
+      "system": "System",
+      "light": "Light",
+      "dark": "Dark"
+    },
+    "startOnLogin": {
+      "label": "Start on login",
+      "desc": "Launch hidden at system startup."
+    },
+    "analytics": {
+      "label": "Share analytics",
+      "desc": "Send anonymous crash & error reports to help improve the app."
+    },
+    "version": "v{{version}}"
+  },
+  "tray": {
+    "open": "Open Port Monitor",
+    "quit": "Quit Port Monitor",
+    "tooltip": "Port Monitor",
+    "listeningPorts": "Listening ports",
+    "listeningPortsCount": "Listening ports ({{count}})",
+    "noPorts": "No listening ports",
+    "more": "+ {{count}} more…",
+    "pid": "PID {{pid}}",
+    "openBrowser": "🌐 Open in browser",
+    "kill": "🛑 Kill"
+  }
+}
