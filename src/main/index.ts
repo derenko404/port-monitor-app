@@ -13,12 +13,15 @@ import {
 } from 'electron'
 import { join } from 'path'
 import appIcon from '../../build/icon-dock.png?asset'
+import menuKillIcon from '../../resources/menu/killTemplate.png?asset'
+import menuOpenIcon from '../../resources/menu/openTemplate.png?asset'
+import menuStopIcon from '../../resources/menu/stopTemplate.png?asset'
 import trayIcon from '../../resources/trayTemplate_black.png?asset'
 import { AnalyticsEvent, AnalyticsProps } from '../shared/analytics'
 import { IPC } from '../shared/ipc'
 import { groupRank, localhostUrl, toRows } from '../shared/ports'
 import { isKnownTech } from '../shared/tech'
-import { PortEntry, PortGroup, Settings } from '../shared/types'
+import { ContainerPort, isContainerPort, PortEntry, PortGroup, Settings } from '../shared/types'
 import { capture, isFreshInstall, shutdownAnalytics } from './analytics'
 import { containerNamesResolverFor } from './container-names-resolver'
 import i18n from './i18n'
@@ -40,6 +43,25 @@ if (app.isPackaged) {
 let tray: Tray | null = null
 let mainWindow: BrowserWindow | null = null
 let isQuitting = false
+
+// monochrome menu-item icons (mac template → auto-adapts to light/dark menus).
+// built lazily on first menu open so they outlive a single build.
+let menuIcons: {
+  open: Electron.NativeImage
+  kill: Electron.NativeImage
+  stop: Electron.NativeImage
+}
+function getMenuIcons(): typeof menuIcons {
+  if (!menuIcons) {
+    const load = (path: string): Electron.NativeImage => {
+      const img = nativeImage.createFromPath(path)
+      if (process.platform === 'darwin') img.setTemplateImage(true)
+      return img
+    }
+    menuIcons = { open: load(menuOpenIcon), kill: load(menuKillIcon), stop: load(menuStopIcon) }
+  }
+  return menuIcons
+}
 
 function createWindow(): BrowserWindow {
   const win = new BrowserWindow({
@@ -112,6 +134,7 @@ async function buildTrayMenu(): Promise<Menu> {
   }
 
   const MAX = 15
+  const icons = getMenuIcons()
   const isPinned = (p: PortEntry): boolean => settings.pinned.includes(p.port)
 
   const inRange = (p: PortEntry): boolean =>
@@ -133,6 +156,7 @@ async function buildTrayMenu(): Promise<Menu> {
   // `name` labels the port with its service (e.g. a docker container) when it
   // differs from the row's command; omitted otherwise.
   const openItem = (p: PortEntry, name?: string): Electron.MenuItemConstructorOptions => ({
+    icon: icons.open,
     label: name
       ? i18n.t('tray.openNamedPort', { name, port: p.port })
       : i18n.t('tray.openPort', { port: p.port }),
@@ -142,8 +166,10 @@ async function buildTrayMenu(): Promise<Menu> {
     }
   })
 
-  const killItem = (pid: number): Electron.MenuItemConstructorOptions => ({
-    label: i18n.t('tray.kill'),
+  // `label` overrides the menu text (parent-kill vs engine-kill); defaults to plain Kill
+  const killItem = (pid: number, label?: string): Electron.MenuItemConstructorOptions => ({
+    icon: icons.kill,
+    label: label ?? i18n.t('tray.kill'),
     click: () => {
       capture('kill', { source: 'tray' })
       killPid(pid)
@@ -151,26 +177,80 @@ async function buildTrayMenu(): Promise<Menu> {
     }
   })
 
+  // stop a single container behind a proxy port (never kills the engine pid)
+  const stopItem = (p: ContainerPort, command: string): Electron.MenuItemConstructorOptions => ({
+    icon: icons.stop,
+    label: i18n.t('tray.stop'),
+    click: async () => {
+      capture('kill', { source: 'tray', signal: 'docker-stop' })
+      await containerNamesResolverFor(command)?.stop(p.container.id)
+      notifyPortsChanged()
+    }
+  })
+
+  // a port label inside a group submenu (":3000  service" when named, else ":3000")
+  const portLabel = (p: PortEntry, command: string): string =>
+    settings.resolveContainersNames && p.command !== command
+      ? `:${p.port}  ${p.command}`
+      : `:${p.port}`
+
   const rowItem = (g: PortGroup): Electron.MenuItemConstructorOptions => {
     const { ports } = g
-    const single = ports.length === 1
     const pin = ports.some(isPinned) ? '📌 ' : ''
     const known = isKnownTech(g.command)
-    // known → one open action per port; unknown multi-port → list ports (disabled);
-    // unknown single-port → nothing (the port already shows in the label)
     const named = settings.resolveContainersNames
+    // mirrors the UI: container groups (any port count) and multi-port processes expand
+    const isEngine = g.kind === 'container-group'
+    const grouped = isEngine || ports.length > 1
+    const header: Electron.MenuItemConstructorOptions[] = [
+      { label: i18n.t('tray.pid', { pid: g.pid }), enabled: false },
+      { type: 'separator' }
+    ]
+
+    // single process: open in browser (known tech) + kill, like today
+    if (!grouped) {
+      const p = ports[0]
+      return {
+        label: `${pin}:${p.port}  —  ${g.command}`,
+        submenu: [
+          ...header,
+          ...(known ? [openItem(p), { type: 'separator' as const }] : []),
+          killItem(g.pid)
+        ]
+      }
+    }
+
+    // engine: engine-kill + per-container submenu (open + stop)
+    if (isEngine) {
+      const containerRows = ports.map((p) => ({
+        label: portLabel(p, g.command),
+        submenu: [
+          ...(known ? [openItem(p)] : []),
+          ...(isContainerPort(p) ? [stopItem(p, g.command)] : [])
+        ]
+      }))
+      return {
+        label: `${pin}${g.command}`,
+        submenu: [
+          ...header,
+          killItem(g.pid, i18n.t('tray.killEngine')),
+          { type: 'separator' },
+          ...containerRows
+        ]
+      }
+    }
+
+    // multi-port process: parent-kill, no per-port kill; ports just open in browser
     const portRows: Electron.MenuItemConstructorOptions[] = known
       ? ports.map((p) => openItem(p, named && p.command !== g.command ? p.command : undefined))
-      : single
-        ? []
-        : ports.map((p) => ({ label: `:${p.port}`, enabled: false }))
+      : ports.map((p) => ({ label: `:${p.port}`, enabled: false }))
     return {
-      label: single ? `${pin}:${ports[0].port}  —  ${g.command}` : `${pin}${g.command}`,
+      label: `${pin}${g.command}`,
       submenu: [
-        { label: i18n.t('tray.pid', { pid: g.pid }), enabled: false },
+        ...header,
+        killItem(g.pid, i18n.t('tray.killParent')),
         { type: 'separator' },
-        ...(portRows.length ? [...portRows, { type: 'separator' as const }] : []),
-        killItem(g.pid)
+        ...portRows
       ]
     }
   }

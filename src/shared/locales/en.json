@@ -143,9 +143,12 @@
     "noPorts": "No listening ports",
     "more": "+ {{count}} more…",
     "pid": "PID {{pid}}",
-    "openBrowser": "🌐 Open in browser",
-    "openPort": "🌐 Open :{{port}}",
-    "openNamedPort": "🌐 Open {{name}} :{{port}}",
-    "kill": "🛑 Kill"
+    "openBrowser": "Open in browser",
+    "openPort": "Open :{{port}}",
+    "openNamedPort": "Open {{name}} :{{port}}",
+    "kill": "Kill",
+    "killParent": "Kill process",
+    "killEngine": "Kill engine",
+    "stop": "Stop container"
   }
 }
