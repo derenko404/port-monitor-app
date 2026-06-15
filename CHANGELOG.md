@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.3](https://github.com/derenko404/port-monitor-app/compare/v1.5.2...v1.5.3) (2026-06-15)
+
+### Bug Fixes
+
+* update tray menu, update tray menu icons ([e561df8](https://github.com/derenko404/port-monitor-app/commit/e561df88a686319c100fad3821ecc38277b424a0))
+* update tray menu, update tray menu icons ([e4e8030](https://github.com/derenko404/port-monitor-app/commit/e4e8030b2f55df4d02b7bbb8098088919e1e9c56))
+
 ## [1.5.2](https://github.com/derenko404/port-monitor-app/compare/v1.5.1...v1.5.2) (2026-06-14)
 
 ### Bug Fixes
